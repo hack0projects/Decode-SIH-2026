@@ -148,16 +148,17 @@ export default function Navbar({
           }}
         >
           <div style={{
-            width: '36px',
-            height: '36px',
+            width: '38px',
+            height: '38px',
             borderRadius: 'var(--radius-md)',
             backgroundColor: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
             justify: 'center',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
+            flexShrink: 0
           }}>
-            <Code2 size={20} strokeWidth={2.5} />
+            <Code2 size={22} strokeWidth={2.5} style={{ display: 'block' }} />
           </div>
           <div>
             <div style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--text-main)' }}>
