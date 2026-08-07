@@ -1,0 +1,145 @@
+RolePrimary ResponsibilitiesCore Tech / APIs
+
+Member 1: AI Engine & RAG Lead
+
+• Build the RAG pipeline using NCERT/state-board CS syllabus.
+
+
+
+• Draft Socratic system prompts (preventing direct code dumps).
+
+
+
+• Implement runtime error explanation and concept scaffolding logic.
+
+Gemini/Claude API, FAISS/Pinecone, Python/LangChain
+
+Member 2: Inclusion & Accessibility Engineer
+
+• Integrate Bhashini API for Indian regional language translation.
+
+
+
+• Build the Indian Sign Language (ISL) video/visual mapping engine.
+
+
+
+• Set up Speech-to-Text and TTS capabilities.
+
+Bhashini API, ISL Video Library/APIs, Speech APIs
+
+Member 3: Frontend Lead (Student Workspace)
+
+• Build the main React student workspace.
+
+
+
+• Integrate Monaco Editor and/or Blockly for dual block/text editing.
+
+
+
+• Build the AI Chat drawer, ISL video overlay player, and accessible UI.
+
+React.js, Tailwind CSS, Monaco/Blockly
+
+Member 4: Backend & Execution Engineer
+
+• Build Node.js / FastAPI backend endpoints.
+
+
+
+• Integrate secure code execution APIs (e.g., Piston).
+
+
+
+• Set up PostgreSQL cloud DB, SQLite offline storage, and Service Workers.
+
+Node.js/FastAPI, Piston API, PostgreSQL, SQLite
+
+Member 5: Full-Stack Engineer (Dashboard & Analytics)
+
+• Build the Teacher Dashboard with analytics visualizations.
+
+
+
+• Implement student mastery tracking & Spaced Revision engine.
+
+
+
+• Setup Firebase/OAuth authentication for students & teachers.
+
+React.js, Recharts/Chart.js, Firebase Auth
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+2. Phase-by-Phase Development Workflow
+
+Phase 0: Architecture & Repo Setup (Day 1)
+
+• Member 1: Setup vector store (FAISS/Pinecone) and embed sample NCERT CS chapters.
+• Member 2: Benchmark Bhashini API keys and curate 15–20 pre-recorded ISL video clips for core programming concepts (e.g., loops, variables, functions).
+• Member 3: Scaffold the React.js client app and set up initial layout routes.
+• Member 4: Set up Node.js/FastAPI server repository, environment configurations, and PostgreSQL database models.
+• Member 5: Set up Firebase Authentication (Student vs. Teacher roles).
+Phase 1: Core Coding Loop (Days 2–3)
+
+• Member 1: Write LLM prompt templates for concept explanations and plain-English error handling.
+• Member 3: Embed Monaco/Blockly code editor into the React student interface.
+• Member 4: Connect Piston API to allow students to run code safely and return stdout/stderr to the frontend.
+• Member 5: Build basic user login pages and state persistence.
+Phase 2: Inclusion Layer (Days 4–5)
+
+• Member 2: Build the translation pipeline wrapper (Translating LLM outputs into regional languages via Bhashini).
+• Member 2 & 3: Connect the ISL video player in the UI so that when a student triggers a concept hint, the corresponding ISL clip plays alongside the text.
+• Member 1 & 4: Wire the RAG pipeline into the main backend route to ensure answers are strictly syllabus-grounded.
+Phase 3: Progress & Teacher Analytics (Days 6–7)
+
+• Member 5: Build the Teacher Dashboard UI using Recharts (Class progress, individual mastery bars, flagged at-risk students).
+• Member 4 & 5: Build backend triggers to log student attempts, compilation errors, and completion time to the database.
+• Member 3: Build student portfolio views for mini-projects (Calculator, Quiz App, Tic-Tac-Toe).
+Phase 4: Offline Engine & Retention (Days 8–9)
+
+• Member 4: Implement Service Workers for caching AI conversations and setup SQLite for local offline question storage.
+• Member 5: Build the Spaced Revision / Memory Engine logic to resurface previously failed concepts during practice sessions.
+• Member 3: Design downloadable PDF summaries of completed lessons.
+Phase 5: Polish, Testing & Demo Prep (Final Days)
+
+• All Members: End-to-end integration testing.
+• Priority Rule: Ensure one complete, seamless workflow (e.g., Python + Hindi + ISL Video + Calculator Project) works perfectly before attempting to demo edge cases.
+ 

@@ -1,0 +1,243 @@
+import React from 'react';
+import { 
+  Code2, 
+  Hand, 
+  Languages, 
+  LayoutDashboard, 
+  FolderKanban, 
+  Bot, 
+  GraduationCap, 
+  BookOpen, 
+  User, 
+  Sparkles,
+  Terminal
+} from 'lucide-react';
+
+export default function Navbar({ 
+  currentTab, 
+  setCurrentTab, 
+  islMode, 
+  setIslMode, 
+  currentLang, 
+  setCurrentLang,
+  userRole,
+  setUserRole
+}) {
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिंदी (Hindi)' },
+    { code: 'ta', name: 'தமிழ் (Tamil)' },
+    { code: 'te', name: 'తెలుగు (Telugu)' },
+    { code: 'kn', name: 'கன்னட (Kannada)' },
+    { code: 'mr', name: 'मराठी (Marathi)' },
+    { code: 'bn', name: 'বাংলা (Bengali)' },
+    { code: 'gu', name: 'ગુજરાતી (Gujarati)' }
+  ];
+
+  const navItems = [
+    { id: 'home', label: 'Home', icon: LayoutDashboard },
+    { id: 'projects', label: 'Projects Hub', icon: FolderKanban },
+    { id: 'my-workspace', label: 'My Workspace', icon: Terminal },
+    { id: 'ai-mentor', label: 'AI Mentor', icon: Bot },
+    { id: 'ncert', label: 'NCERT Syllabus', icon: BookOpen },
+    { id: 'teacher', label: 'Teacher Portal', icon: GraduationCap },
+  ];
+
+  return (
+    <header style={{
+      backgroundColor: 'var(--bg-card)',
+      borderBottom: '1px solid var(--border-light)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 100
+    }}>
+      {/* Upper sub-bar for ISL Status & Problem Statement */}
+      <div style={{
+        backgroundColor: 'var(--bg-subtle)',
+        borderBottom: '1px solid var(--border-light)',
+        padding: '6px 24px',
+        display: 'flex',
+        justify: 'space-between',
+        alignItems: 'center',
+        fontSize: '12px',
+        color: 'var(--text-muted)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600' }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: '#16A34A',
+              display: 'inline-block'
+            }}></span>
+            Hackathon MVP Mode
+          </div>
+          <span>•</span>
+          <span>Problem Statement: <strong>Inclusive Education AI</strong></span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* ISL Toggle Switch */}
+          <button 
+            onClick={() => setIslMode(!islMode)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: islMode ? '#FEF3C7' : 'var(--bg-card)',
+              color: islMode ? '#92400E' : 'var(--text-muted)',
+              border: islMode ? '1px solid #FCD34D' : '1px solid var(--border-medium)',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+            title="Toggle Indian Sign Language gesture video support"
+          >
+            <Hand size={14} color={islMode ? '#D97706' : 'currentColor'} />
+            <span>ISL Video Support:</span>
+            <span style={{ color: islMode ? '#B45309' : 'var(--text-main)', fontWeight: '700' }}>
+              {islMode ? 'ON 🤟' : 'OFF'}
+            </span>
+          </button>
+
+          {/* Regional Language Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Languages size={14} color="var(--text-faint)" />
+            <select
+              value={currentLang}
+              onChange={(e) => setCurrentLang(e.target.value)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              {languages.map(lang => (
+                <option key={lang.code} value={lang.code}>{lang.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navigation Bar */}
+      <div style={{
+        padding: '12px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justify: 'space-between',
+        maxWidth: '1400px',
+        margin: '0 auto'
+      }}>
+        {/* Brand Logo */}
+        <div 
+          onClick={() => setCurrentTab('landing')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: 'pointer',
+            userSelect: 'none'
+          }}
+        >
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--accent)',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'center',
+            color: '#FFFFFF'
+          }}>
+            <Code2 size={20} strokeWidth={2.5} />
+          </div>
+          <div>
+            <div style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--text-main)' }}>
+              CodeSeekho <span style={{ color: 'var(--accent)' }}>AI</span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '-2px' }}>
+              Inclusive CS Education Platform
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs - Minimal Outlined Blocks */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setCurrentTab(item.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '13px',
+                  fontWeight: isActive ? '700' : '600',
+                  whiteSpace: 'nowrap',
+                  color: isActive ? 'var(--accent)' : 'var(--text-main)',
+                  backgroundColor: isActive ? 'var(--accent-light)' : 'var(--bg-card)',
+                  border: isActive ? '1.5px solid var(--accent)' : '1px solid var(--border-medium)',
+                  boxShadow: isActive ? '0 1px 3px rgba(200, 75, 36, 0.15)' : 'var(--shadow-sm)',
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer'
+                }}
+              >
+                <Icon size={15} color={isActive ? 'var(--accent)' : 'var(--text-muted)'} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* User Role & Quick Landing Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => setCurrentTab('landing')}
+            style={{
+              fontSize: '12px',
+              fontWeight: '600',
+              color: 'var(--text-muted)',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-medium)',
+              backgroundColor: 'var(--bg-card)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Landing View
+          </button>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px',
+            backgroundColor: 'var(--bg-subtle)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-medium)',
+            fontSize: '12px',
+            fontWeight: '700',
+            whiteSpace: 'nowrap'
+          }}>
+            <User size={14} color="var(--accent)" />
+            <span>Class 8 Student</span>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
