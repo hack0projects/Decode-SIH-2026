@@ -3,10 +3,13 @@ const express = require('express');
 const axios = require('axios');
 const { Pool } = require('pg');
 
+const cors = require('cors');
+
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(cors());
 
 const CLIENT_ID = process.env.JDOODLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET;
@@ -123,6 +126,50 @@ app.post('/translate', async (req, res) => {
     success: true
   });
 });
+app.get('/progress/:studentName', async (req, res) => {
+  const { studentName } = req.params;
+ 
+  try {
+    const totalResult = await pool.query(
+      'SELECT COUNT(*) FROM attempts WHERE student_name = $1',
+      [studentName]
+    );
+ 
+    const successResult = await pool.query(
+      'SELECT COUNT(*) FROM attempts WHERE student_name = $1 AND success = true',
+      [studentName]
+    );
+ 
+    const languageResult = await pool.query(
+      `SELECT language, COUNT(*) as attempt_count
+       FROM attempts
+       WHERE student_name = $1
+       GROUP BY language`,
+      [studentName]
+    );
+ 
+    const totalAttempts = parseInt(totalResult.rows[0].count);
+    const successfulAttempts = parseInt(successResult.rows[0].count);
+    const failedAttempts = totalAttempts - successfulAttempts;
+ 
+    res.json({
+      studentName: studentName,
+      totalAttempts: totalAttempts,
+      successfulAttempts: successfulAttempts,
+      failedAttempts: failedAttempts,
+      languageBreakdown: languageResult.rows,
+      success: true
+    });
+ 
+  } catch (error) {
+    console.error('Progress fetch error:', error.message);
+    res.status(500).json({
+      error: "Progress data nahi mil paya",
+      success: false
+    });
+  }
+});
+ 
 
 app.listen(PORT, () => {
   console.log(`Server chal raha hai: http://localhost:${PORT}`);
