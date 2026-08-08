@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const { Pool } = require('pg');
-
 const cors = require('cors');
 
 const app = express();
@@ -74,7 +73,6 @@ app.post('/run-code', async (req, res) => {
   }
 });
 
-// UPDATED ROUTE - ab Krishna ka real Dify API use ho raha hai (fake response hata diya)
 app.post('/ask-tutor', async (req, res) => {
   const { question, studentName } = req.body;
 
@@ -116,30 +114,61 @@ app.post('/ask-tutor', async (req, res) => {
   }
 });
 
+
 app.post('/translate', async (req, res) => {
   const { text, targetLanguage, studentName } = req.body;
 
-  const fakeTranslation = `[${targetLanguage} mein translate hua]: ${text}`;
+  try {
+    const translatePrompt = `Translate the following text into ${targetLanguage}. Only return the translated text, nothing else:\n\n${text}`;
 
-  res.json({
-    translatedText: fakeTranslation,
-    success: true
-  });
+    const groqResponse = await axios.post(
+      process.env.TRANSLATE_API_URL,
+      {
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'user', content: translatePrompt }
+        ]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.TRANSLATE_API_KEY}`
+        }
+      }
+    );
+
+    const translatedText = groqResponse.data.choices[0].message.content;
+
+    res.json({
+      translatedText: translatedText,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Translate API error:', error.message);
+    res.status(500).json({
+      error: "Translation nahi ho paya",
+      success: false
+    });
+  }
 });
+    
+  
+
 app.get('/progress/:studentName', async (req, res) => {
   const { studentName } = req.params;
- 
+
   try {
     const totalResult = await pool.query(
       'SELECT COUNT(*) FROM attempts WHERE student_name = $1',
       [studentName]
     );
- 
+
     const successResult = await pool.query(
       'SELECT COUNT(*) FROM attempts WHERE student_name = $1 AND success = true',
       [studentName]
     );
- 
+
     const languageResult = await pool.query(
       `SELECT language, COUNT(*) as attempt_count
        FROM attempts
@@ -147,11 +176,11 @@ app.get('/progress/:studentName', async (req, res) => {
        GROUP BY language`,
       [studentName]
     );
- 
+
     const totalAttempts = parseInt(totalResult.rows[0].count);
     const successfulAttempts = parseInt(successResult.rows[0].count);
     const failedAttempts = totalAttempts - successfulAttempts;
- 
+
     res.json({
       studentName: studentName,
       totalAttempts: totalAttempts,
@@ -160,7 +189,7 @@ app.get('/progress/:studentName', async (req, res) => {
       languageBreakdown: languageResult.rows,
       success: true
     });
- 
+
   } catch (error) {
     console.error('Progress fetch error:', error.message);
     res.status(500).json({
@@ -169,7 +198,6 @@ app.get('/progress/:studentName', async (req, res) => {
     });
   }
 });
- 
 
 app.listen(PORT, () => {
   console.log(`Server chal raha hai: http://localhost:${PORT}`);
