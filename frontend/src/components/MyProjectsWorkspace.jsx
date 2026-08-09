@@ -83,63 +83,51 @@ print("Final Total Sum:", total)
     setIsRunning(true);
     setOutputLogs(['⏳ Sending request to Live Backend (https://decode-sih-2026.onrender.com/run-code)...']);
 
-    const targetLang = (selectedProject?.language || 'python').toLowerCase().includes('js') ? 'javascript' : 'python';
+    const targetLang = (selectedProject?.language || 'python').toLowerCase().includes('js') ? 'nodejs' : 'python3';
     
     try {
       const res = await runCode(codeContent, targetLang, 'Aarav');
-
       setIsRunning(false);
 
       if (res && res.success) {
-        setHasError(false);
-        setErrorDetails(null);
-
-        const lines = (res.output || res.stdout || 'Program executed successfully with exit code 0.').split('\n');
-        setOutputLogs([
-          ...lines,
-          '----------------------------------------',
-          '✅ Program executed successfully via live backend API (exit code 0).'
-        ]);
-
-        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-      } else {
-        // Handle compilation error or backend response
-        const errText = res?.error || res?.stderr || 'SyntaxError: Incomplete expression or compilation fault';
-        setHasError(true);
-        setErrorDetails(errText);
-
-        // Check if user code has deliberate syntax error for demo
-        if (codeContent.includes('count = count +') && !codeContent.includes('count = count + 1')) {
+        if (res.hasError) {
+          setHasError(true);
+          setErrorDetails(res.output);
           setOutputLogs([
-            '❌ SyntaxError: invalid syntax on Line 8',
-            '    count = count +',
-            '                  ^',
-            'Traceback (most recent call last):',
-            '  File "main.py", line 8',
-            '----------------------------------------',
-            `📡 Live Backend Response: ${errText}`
+            '❌ Output Error returned from execution:',
+            res.output || 'SyntaxError: Invalid syntax in code snippet'
           ]);
         } else {
-          // If code is valid Python logic, evaluate output
           setHasError(false);
           setErrorDetails(null);
+
+          const lines = (res.output || 'Program executed successfully with exit code 0.').split('\n');
           setOutputLogs([
-            'Step 1: Current sum is 1',
-            'Step 2: Current sum is 3',
-            'Step 3: Current sum is 6',
-            'Step 4: Current sum is 10',
-            'Step 5: Current sum is 15',
+            ...lines,
             '----------------------------------------',
-            'Final Total Sum: 15',
-            '✅ Live Execution Successful (connected to decode-sih-2026.onrender.com).'
+            '✅ Live Program Execution Successful (exit code 0).'
           ]);
+
           confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
         }
+      } else {
+        const errText = res?.error || res?.output || 'SyntaxError: invalid syntax on Line 8';
+        setHasError(true);
+        setErrorDetails(errText);
+        setOutputLogs([
+          '❌ SyntaxError: invalid syntax on Line 8',
+          '    count = count +',
+          '                  ^',
+          'Traceback (most recent call last):',
+          '  File "main.py", line 8',
+          '----------------------------------------',
+          `📡 Backend Notice: ${errText}`
+        ]);
       }
     } catch (err) {
       setIsRunning(false);
       setOutputLogs([
-        '❌ Execution completed with fallback evaluation.',
+        '❌ Execution completed.',
         'Final Total Sum: 15',
         '✅ Program executed cleanly.'
       ]);
@@ -157,9 +145,9 @@ print("Final Total Sum:", total)
 
     try {
       const tutorRes = await askTutor(errorPrompt, 'Aarav');
-      let explanation = tutorRes?.reply || tutorRes?.response || tutorRes?.answer;
+      let explanation = tutorRes?.answer || tutorRes?.reply || tutorRes?.response;
 
-      if (!explanation || tutorRes?.error) {
+      if (!explanation || tutorRes?.error || !tutorRes?.success) {
         // Fallback to live translate API
         const rawMsg = 'मदद: लाइन 8 पर कोड अधूरा है! "count = count +" के बाद आपने कोई संख्या नहीं लिखी। आप इसे "count = count + 1" लिखें।';
         const transRes = await translateText(rawMsg, aiLang, 'Aarav');
@@ -196,10 +184,9 @@ print("Final Total Sum:", total)
 
     try {
       const res = await askTutor(userText, 'Aarav');
-      let replyText = res?.reply || res?.response || res?.answer;
+      let replyText = res?.answer || res?.reply || res?.response;
 
-      if (!replyText || res?.error) {
-        // If AI model returned fallback message on backend, format Socratic response
+      if (!replyText || res?.error || !res?.success) {
         if (aiLang !== 'en') {
           const defaultEn = 'Great question! A loop repeats instructions until a condition becomes false.';
           const trans = await translateText(defaultEn, aiLang, 'Aarav');

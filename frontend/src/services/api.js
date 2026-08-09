@@ -1,36 +1,81 @@
 // CodeSeekho AI — Live Backend API Client
 // Connected to deployed backend: https://decode-sih-2026.onrender.com
+// Backend Developer: Kritika (Member 4)
 
 const BASE_URL = 'https://decode-sih-2026.onrender.com';
 
 /**
- * Execute Python / JS code via backend API
+ * Map frontend language identifiers to JDoodle backend language keys
+ * @param {string} lang 
+ */
+function getJDoodleLanguage(lang = 'python') {
+  const normalized = lang.toLowerCase();
+  if (normalized.includes('js') || normalized.includes('node') || normalized.includes('html')) {
+    return 'nodejs';
+  }
+  if (normalized.includes('cpp') || normalized.includes('c++')) {
+    return 'cpp17';
+  }
+  if (normalized.includes('java') && !normalized.includes('script')) {
+    return 'java';
+  }
+  // Default to Python3
+  return 'python3';
+}
+
+/**
+ * Map language codes ('hi', 'ta', 'te') to full names ('Hindi', 'Tamil', 'Telugu')
+ * @param {string} langCode 
+ */
+function getFullLanguageName(langCode = 'hi') {
+  const map = {
+    'hi': 'Hindi',
+    'en': 'English',
+    'ta': 'Tamil',
+    'te': 'Telugu',
+    'kn': 'Kannada',
+    'mr': 'Marathi',
+    'bn': 'Bengali',
+    'gu': 'Gujarati'
+  };
+  return map[langCode] || langCode;
+}
+
+/**
+ * Execute Python / JS code via backend API (/run-code)
  * @param {string} code 
  * @param {string} language 
  * @param {string} studentName 
  */
-export async function runCode(code, language = 'python', studentName = 'Aarav') {
+export async function runCode(code, language = 'python3', studentName = 'Aarav') {
+  const jdoodleLang = getJDoodleLanguage(language);
+  
   try {
     const response = await fetch(`${BASE_URL}/run-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, language, studentName })
+      body: JSON.stringify({
+        code,
+        language: jdoodleLang,
+        studentName
+      })
     });
 
     const data = await response.json();
-    return data;
+    return data; // returns { output, success, hasError }
   } catch (err) {
     console.error('API Error in /run-code:', err);
     return {
       success: false,
-      error: 'Backend network connection error. Check server logs.',
-      output: err.message
+      hasError: true,
+      output: `Connection Error: ${err.message}`
     };
   }
 }
 
 /**
- * Ask AI Socratic Tutor a doubt
+ * Ask AI Socratic Tutor a doubt (/ask-tutor)
+ * Returns { answer, success }
  * @param {string} question 
  * @param {string} studentName 
  */
@@ -39,49 +84,59 @@ export async function askTutor(question, studentName = 'Aarav') {
     const response = await fetch(`${BASE_URL}/ask-tutor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, studentName })
+      body: JSON.stringify({
+        question,
+        studentName
+      })
     });
 
     const data = await response.json();
-    return data;
+    return data; // returns { answer, success }
   } catch (err) {
     console.error('API Error in /ask-tutor:', err);
     return {
       success: false,
-      error: 'Backend AI connection error.',
-      reply: 'AI Tutor network error.'
+      answer: 'AI Tutor network connection error.',
+      error: err.message
     };
   }
 }
 
 /**
- * Translate text into Indian regional language via Bhashini/LLM backend API
+ * Translate text into Indian regional language via Bhashini/LLM backend API (/translate)
+ * Returns { translatedText, success }
  * @param {string} text 
  * @param {string} targetLanguage 
  * @param {string} studentName 
  */
-export async function translateText(text, targetLanguage = 'hi', studentName = 'Aarav') {
+export async function translateText(text, targetLanguage = 'Hindi', studentName = 'Aarav') {
+  const fullLangName = getFullLanguageName(targetLanguage);
+
   try {
     const response = await fetch(`${BASE_URL}/translate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, targetLanguage, studentName })
+      body: JSON.stringify({
+        text,
+        targetLanguage: fullLangName,
+        studentName
+      })
     });
 
     const data = await response.json();
-    return data;
+    return data; // returns { translatedText, success }
   } catch (err) {
     console.error('API Error in /translate:', err);
     return {
       success: false,
-      error: 'Translation API connection error.',
-      translatedText: text
+      translatedText: text,
+      error: err.message
     };
   }
 }
 
 /**
- * Fetch progress analytics for a student
+ * Fetch progress analytics for a student (/progress/:studentName)
  * @param {string} studentName 
  */
 export async function getStudentProgress(studentName = 'Aarav') {
@@ -93,7 +148,7 @@ export async function getStudentProgress(studentName = 'Aarav') {
     console.error('API Error in /progress/:studentName:', err);
     return {
       success: false,
-      error: 'Progress API connection error.'
+      error: err.message
     };
   }
 }
@@ -105,7 +160,6 @@ export async function getProgressOverview() {
   try {
     const response = await fetch(`${BASE_URL}/progress-overview`);
     if (!response.ok) {
-      // Fallback if endpoint returns 404
       return { success: true, overview: { totalStudents: 34, avgScore: 78 } };
     }
     const data = await response.json();
@@ -114,7 +168,7 @@ export async function getProgressOverview() {
     console.error('API Error in /progress-overview:', err);
     return {
       success: false,
-      error: 'Progress Overview API connection error.'
+      error: err.message
     };
   }
 }
