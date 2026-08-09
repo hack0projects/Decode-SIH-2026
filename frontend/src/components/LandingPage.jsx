@@ -97,17 +97,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 1 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <Languages size={20} />
+                <Languages size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Your language, not just English
@@ -120,17 +122,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 2 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <Hand size={20} />
+                <Hand size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Indian Sign Language built in
@@ -143,17 +147,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 3 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <Code2 size={20} />
+                <Code2 size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Real languages, real projects
@@ -166,17 +172,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 4 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <GraduationCap size={20} />
+                <GraduationCap size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Classroom ready
