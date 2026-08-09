@@ -14,10 +14,7 @@ import {
 } from "lucide-react";
 import ISLVideoPlayerModal from "./ISLVideoPlayerModal";
 import { startListening, speakText, getLocaleCode } from "./speechUtils";
-  Volume2
-} from 'lucide-react';
-import ISLVideoPlayerModal from './ISLVideoPlayerModal';
-import { askTutor, translateText } from '../services/api';
+import { askTutor, translateText } from "../services/api";
 
 export default function AIMentorPage({ currentLang, islMode }) {
   const [selectedLang, setSelectedLang] = useState(currentLang || "hi");
@@ -87,9 +84,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
     // Derive English base reply and concept label
     let englishReply = "";
-    let conceptLabel = "Logic Concept";
-
-    let conceptLabel = userText.toLowerCase().includes('loop') ? 'Loop Iteration' : userText.toLowerCase().includes('error') ? 'Error Debugging' : 'CS Concepts';
+    const conceptLabel = userText.toLowerCase().includes('loop') ? 'Loop Iteration' : userText.toLowerCase().includes('error') ? 'Error Debugging' : 'CS Concepts';
 
     try {
       const res = await askTutor(userText, 'Aarav');
@@ -103,7 +98,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
         } else if (userText.toLowerCase().includes('error')) {
           baseEn = 'Syntax errors happen when instructions are incomplete. Check for missing quotes or parentheses.';
         }
-        
+
         if (selectedLang !== 'en') {
           const trans = await translateText(baseEn, selectedLang, 'Aarav');
           replyText = trans?.translatedText || baseEn;
@@ -112,17 +107,20 @@ export default function AIMentorPage({ currentLang, islMode }) {
         }
       }
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        text: replyText,
-        islAvailable: true,
-        concept: conceptLabel,
-        // Store English base so ISL subtitle is always descriptive
-        englishText: englishReply,
-      },
-    ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text: replyText,
+          islAvailable: true,
+          concept: conceptLabel,
+          // Store English base so ISL subtitle is always descriptive
+          englishText: englishReply,
+        },
+      ]);
+    } catch (err) {
+      console.error("handleSendMessage error:", err);
+    }
   };
 
   const triggerIslModal = (concept, description) => {
