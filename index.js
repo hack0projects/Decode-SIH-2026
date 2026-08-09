@@ -1,15 +1,14 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const axios = require('axios');
 const { Pool } = require('pg');
-
-const cors = require('cors');
 
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
 const CLIENT_ID = process.env.JDOODLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.JDOODLE_CLIENT_SECRET;
@@ -76,13 +75,15 @@ app.post('/run-code', async (req, res) => {
 
 // UPDATED ROUTE - ab Krishna ka real Dify API use ho raha hai (fake response hata diya)
 app.post('/ask-tutor', async (req, res) => {
-  const { question, studentName } = req.body;
+  const { question, studentName, language } = req.body;
 
   try {
     const difyResponse = await axios.post(
       process.env.DIFY_API_URL,
       {
-        inputs: {},
+        inputs: {
+          language: language || "python"
+        },
         query: question,
         response_mode: "blocking",
         user: studentName || "unknown-student"
@@ -116,30 +117,62 @@ app.post('/ask-tutor', async (req, res) => {
   }
 });
 
+// UPDATED ROUTE - ab Anshita ka Gemini API use ho raha hai translation ke liye
 app.post('/translate', async (req, res) => {
   const { text, targetLanguage, studentName } = req.body;
 
-  const fakeTranslation = `[${targetLanguage} mein translate hua]: ${text}`;
+  try {
+    const translatePrompt = `Translate the following text into ${targetLanguage}. Only return the translated text, nothing else:\n\n${text}`;
 
-  res.json({
-    translatedText: fakeTranslation,
-    success: true
-  });
+    const geminiResponse = await axios.post(
+      `${process.env.TRANSLATE_API_URL}?key=${process.env.TRANSLATE_API_KEY}`,
+      {
+        contents: [
+          {
+            parts: [
+              { text: translatePrompt }
+            ]
+          }
+        ]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const translatedText = geminiResponse.data.candidates[0].content.parts[0].text;
+
+    res.json({
+      translatedText: translatedText,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Translate API error:', error.message);
+    res.status(500).json({
+      error: "Translation nahi ho paya",
+      success: false
+    });
+  }
 });
+
+// NAYA ROUTE - student ke attempts ka summary (Teacher Dashboard ke liye)
 app.get('/progress/:studentName', async (req, res) => {
   const { studentName } = req.params;
- 
+
   try {
     const totalResult = await pool.query(
       'SELECT COUNT(*) FROM attempts WHERE student_name = $1',
       [studentName]
     );
- 
+
     const successResult = await pool.query(
       'SELECT COUNT(*) FROM attempts WHERE student_name = $1 AND success = true',
       [studentName]
     );
- 
+
     const languageResult = await pool.query(
       `SELECT language, COUNT(*) as attempt_count
        FROM attempts
@@ -147,11 +180,11 @@ app.get('/progress/:studentName', async (req, res) => {
        GROUP BY language`,
       [studentName]
     );
- 
+
     const totalAttempts = parseInt(totalResult.rows[0].count);
     const successfulAttempts = parseInt(successResult.rows[0].count);
     const failedAttempts = totalAttempts - successfulAttempts;
- 
+
     res.json({
       studentName: studentName,
       totalAttempts: totalAttempts,
@@ -160,7 +193,7 @@ app.get('/progress/:studentName', async (req, res) => {
       languageBreakdown: languageResult.rows,
       success: true
     });
- 
+
   } catch (error) {
     console.error('Progress fetch error:', error.message);
     res.status(500).json({
@@ -169,7 +202,60 @@ app.get('/progress/:studentName', async (req, res) => {
     });
   }
 });
- 
+
+// NAYA ROUTE - Teacher Dashboard ke liye poori class ka overview ek saath
+app.get('/progress-overview', async (req, res) => {
+  try {
+    const summaryResult = await pool.query(`
+      SELECT student_name,
+             COUNT(*) as total_attempts,
+             COUNT(*) FILTER (WHERE success = true) as successful_attempts,
+             COUNT(*) FILTER (WHERE success = false) as failed_attempts
+      FROM attempts
+      GROUP BY student_name
+      ORDER BY student_name
+    `);
+
+    // Weak topics - jis language/topic mein sabse zyada fail hue, wahi "weak" maana
+    const weakTopicsResult = await pool.query(`
+      SELECT student_name, language, COUNT(*) as fail_count
+      FROM attempts
+      WHERE success = false
+      GROUP BY student_name, language
+    `);
+
+    const weakTopicsByStudent = {};
+    weakTopicsResult.rows.forEach(row => {
+      if (!weakTopicsByStudent[row.student_name]) {
+        weakTopicsByStudent[row.student_name] = [];
+      }
+      weakTopicsByStudent[row.student_name].push({
+        topic: row.language,
+        failCount: parseInt(row.fail_count)
+      });
+    });
+
+    const overview = summaryResult.rows.map(row => ({
+      studentName: row.student_name,
+      totalAttempts: parseInt(row.total_attempts),
+      successfulAttempts: parseInt(row.successful_attempts),
+      failedAttempts: parseInt(row.failed_attempts),
+      weakTopics: weakTopicsByStudent[row.student_name] || []
+    }));
+
+    res.json({
+      students: overview,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Progress overview error:', error.message);
+    res.status(500).json({
+      error: "Class overview nahi mil paya",
+      success: false
+    });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server chal raha hai: http://localhost:${PORT}`);

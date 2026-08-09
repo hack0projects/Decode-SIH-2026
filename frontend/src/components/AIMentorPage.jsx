@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import ISLVideoPlayerModal from "./ISLVideoPlayerModal";
 import { startListening, speakText, getLocaleCode } from "./speechUtils";
+  Volume2
+} from 'lucide-react';
+import ISLVideoPlayerModal from './ISLVideoPlayerModal';
+import { askTutor, translateText } from '../services/api';
 
 export default function AIMentorPage({ currentLang, islMode }) {
   const [selectedLang, setSelectedLang] = useState(currentLang || "hi");
@@ -85,30 +89,28 @@ export default function AIMentorPage({ currentLang, islMode }) {
     let englishReply = "";
     let conceptLabel = "Logic Concept";
 
-    if (userText.toLowerCase().includes("loop")) {
-      conceptLabel = "Loop Iteration";
-      englishReply =
-        "A loop means repeating an action multiple times. Imagine running 5 laps around your school ground: you count from 1 to 5. In code, the action repeats until the condition turns false!";
-    } else if (
-      userText.toLowerCase().includes("indexerror") ||
-      userText.toLowerCase().includes("error")
-    ) {
-      conceptLabel = "List Indexing";
-      englishReply =
-        "This error happens when you ask for an item at a box number that doesn't exist in your list! If a list has 3 items (indexes 0, 1, 2) and you ask for index 5, Python gives this warning.";
-    } else {
-      conceptLabel = "Programming Basics";
-      englishReply =
-        "Great question! Think of programming like writing a cooking recipe for a robot. The instructions must be executed step-by-step in exact order.";
-    }
+    let conceptLabel = userText.toLowerCase().includes('loop') ? 'Loop Iteration' : userText.toLowerCase().includes('error') ? 'Error Debugging' : 'CS Concepts';
 
-    // BUG FIX 2: For any non-English language selected, call the /translate
-    // backend. Previously only 'hi' was handled; 'ta', 'te', 'kn', 'mr',
-    // 'bn', 'gu' all fell through to the else and returned English text.
-    const replyText =
-      selectedLang === "en"
-        ? englishReply
-        : await translateReply(englishReply, selectedLang, "Student");
+    try {
+      const res = await askTutor(userText, 'Aarav');
+      let replyText = res?.reply || res?.response || res?.answer;
+
+      if (!replyText || res?.error) {
+        // Fallback with live translation
+        let baseEn = 'Programming concepts are best understood by practicing small examples!';
+        if (userText.toLowerCase().includes('loop')) {
+          baseEn = 'A loop repeats instructions until a condition turns false, like running laps around a track.';
+        } else if (userText.toLowerCase().includes('error')) {
+          baseEn = 'Syntax errors happen when instructions are incomplete. Check for missing quotes or parentheses.';
+        }
+        
+        if (selectedLang !== 'en') {
+          const trans = await translateText(baseEn, selectedLang, 'Aarav');
+          replyText = trans?.translatedText || baseEn;
+        } else {
+          replyText = baseEn;
+        }
+      }
 
     setMessages((prev) => [
       ...prev,

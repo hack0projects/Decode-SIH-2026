@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   GraduationCap, 
   Users, 
@@ -9,11 +9,31 @@ import {
   CheckCircle2, 
   BookOpen,
   Search,
-  Filter
+  Filter,
+  Wifi
 } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { getStudentProgress, getProgressOverview } from '../services/api';
 
 export default function TeacherDashboard() {
+  const [liveData, setLiveData] = useState(null);
+  const [apiConnected, setApiConnected] = useState(true);
+
+  useEffect(() => {
+    async function loadProgress() {
+      try {
+        const studentRes = await getStudentProgress('Aarav');
+        const overviewRes = await getProgressOverview();
+        if (studentRes && studentRes.success) {
+          setLiveData(studentRes);
+        }
+      } catch (err) {
+        console.log('Using default classroom analytics');
+      }
+    }
+    loadProgress();
+  }, []);
+
   const classStats = {
     className: "Class 8B — Computer Science",
     totalStudents: 34,
