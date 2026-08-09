@@ -10,7 +10,8 @@ import {
   BookOpen, 
   User, 
   Sparkles,
-  Terminal
+  Terminal,
+  LogOut
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -21,14 +22,16 @@ export default function Navbar({
   currentLang, 
   setCurrentLang,
   userRole,
-  setUserRole
+  setUserRole,
+  userName,
+  setUserName
 }) {
   const languages = [
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'हिंदी (Hindi)' },
     { code: 'ta', name: 'தமிழ் (Tamil)' },
     { code: 'te', name: 'తెలుగు (Telugu)' },
-    { code: 'kn', name: 'கன்னட (Kannada)' },
+    { code: 'kn', name: 'ಕன்னಡ (Kannada)' },
     { code: 'mr', name: 'मराठी (Marathi)' },
     { code: 'bn', name: 'বাংলা (Bengali)' },
     { code: 'gu', name: 'ગુજરાતી (Gujarati)' }
@@ -42,6 +45,12 @@ export default function Navbar({
     { id: 'ncert', label: 'NCERT Syllabus', icon: BookOpen },
     { id: 'teacher', label: 'Teacher Portal', icon: GraduationCap },
   ];
+
+  const handleLogout = () => {
+    setUserName('');
+    localStorage.removeItem('codeseekho_username');
+    setCurrentTab('landing');
+  };
 
   return (
     <header style={{
@@ -57,7 +66,7 @@ export default function Navbar({
         borderBottom: '1px solid var(--border-light)',
         padding: '6px 24px',
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         fontSize: '12px',
         color: 'var(--text-muted)'
@@ -77,6 +86,7 @@ export default function Navbar({
           <span>Problem Statement: <strong>Inclusive Education AI</strong></span>
         </div>
 
+        {/* Header content on the right */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {/* ISL Toggle Switch */}
           <button 
@@ -132,7 +142,7 @@ export default function Navbar({
         padding: '12px 24px',
         display: 'flex',
         alignItems: 'center',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         maxWidth: '1400px',
         margin: '0 auto'
       }}>
@@ -170,15 +180,22 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Navigation Tabs - Minimal Outlined Blocks */}
+        {/* Navigation Tabs - Outlined Blocks */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
+            const isAuthorized = item.id !== 'teacher' || userRole === 'teacher';
+            const isLocked = !userName;
+
+            // If a tab is teacher-only and we are a student, do not show or gray out
+            if (!isAuthorized) return null;
+
             return (
               <button
                 key={item.id}
-                onClick={() => setCurrentTab(item.id)}
+                onClick={() => !isLocked && setCurrentTab(item.id)}
+                disabled={isLocked}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -188,15 +205,17 @@ export default function Navbar({
                   fontSize: '13px',
                   fontWeight: isActive ? '700' : '600',
                   whiteSpace: 'nowrap',
-                  color: isActive ? 'var(--accent)' : 'var(--text-main)',
+                  color: isLocked ? 'var(--text-faint)' : isActive ? 'var(--accent)' : 'var(--text-main)',
                   backgroundColor: isActive ? 'var(--accent-light)' : 'var(--bg-card)',
                   border: isActive ? '1.5px solid var(--accent)' : '1px solid var(--border-medium)',
                   boxShadow: isActive ? '0 1px 3px rgba(200, 75, 36, 0.15)' : 'var(--shadow-sm)',
                   transition: 'all 0.15s ease',
-                  cursor: 'pointer'
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                  opacity: isLocked ? 0.45 : 1
                 }}
+                title={isLocked ? "Log in to unlock this dashboard" : ""}
               >
-                <Icon size={15} color={isActive ? 'var(--accent)' : 'var(--text-muted)'} />
+                <Icon size={15} color={isLocked ? 'var(--text-faint)' : isActive ? 'var(--accent)' : 'var(--text-muted)'} />
                 <span>{item.label}</span>
               </button>
             );
@@ -222,21 +241,59 @@ export default function Navbar({
             Landing View
           </button>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            backgroundColor: 'var(--bg-subtle)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-medium)',
-            fontSize: '12px',
-            fontWeight: '700',
-            whiteSpace: 'nowrap'
-          }}>
-            <User size={14} color="var(--accent)" />
-            <span>Class 8 Student</span>
-          </div>
+          {userName ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: 'var(--bg-subtle)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-medium)',
+                fontSize: '12px',
+                fontWeight: '700',
+                whiteSpace: 'nowrap'
+              }}>
+                <User size={14} color="var(--accent)" />
+                <span>{userName} {userRole === 'teacher' ? '(Teacher)' : ''}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '6px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid #FECACA',
+                  backgroundColor: '#FEF2F2',
+                  color: '#EF4444',
+                  cursor: 'pointer'
+                }}
+                title="Logout"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              backgroundColor: 'var(--bg-subtle)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px dashed var(--border-medium)',
+              fontSize: '12px',
+              fontWeight: '700',
+              color: 'var(--text-muted)',
+              whiteSpace: 'nowrap'
+            }}>
+              <User size={14} />
+              <span>Not Logged In</span>
+            </div>
+          )}
         </div>
       </div>
     </header>

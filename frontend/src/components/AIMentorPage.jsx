@@ -13,10 +13,10 @@ import {
   Mic,
 } from "lucide-react";
 import ISLVideoPlayerModal from "./ISLVideoPlayerModal";
-import { startListening, speakText, getLocaleCode } from "./speechUtils";
+import { startListening, getLocaleCode } from "./speechUtils";
 import { askTutor, translateText } from "../services/api";
 
-export default function AIMentorPage({ currentLang, islMode }) {
+export default function AIMentorPage({ currentLang, islMode, userName }) {
   const [selectedLang, setSelectedLang] = useState(currentLang || "hi");
   const [inputQuery, setInputQuery] = useState("");
   const [messages, setMessages] = useState([
@@ -31,6 +31,55 @@ export default function AIMentorPage({ currentLang, islMode }) {
   const [isIslModalOpen, setIsIslModalOpen] = useState(false);
   const [activeIslConcept, setActiveIslConcept] = useState("");
   const [activeIslDescription, setActiveIslDescription] = useState("");
+
+  const [activeSpeechIdx, setActiveSpeechIdx] = useState(null);
+  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
+
+  const handleSpeakToggle = (idx, text) => {
+    if (!("speechSynthesis" in window)) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    const synth = window.speechSynthesis;
+
+    if (activeSpeechIdx === idx) {
+      if (synth.speaking) {
+        if (isSpeechPaused) {
+          synth.resume();
+          setIsSpeechPaused(false);
+        } else {
+          synth.pause();
+          setIsSpeechPaused(true);
+        }
+      } else {
+        startSpeech(idx, text);
+      }
+    } else {
+      synth.cancel();
+      startSpeech(idx, text);
+    }
+  };
+
+  const startSpeech = (idx, text) => {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = getLocaleCode(selectedLang);
+
+    utterance.onend = () => {
+      setActiveSpeechIdx(null);
+      setIsSpeechPaused(false);
+    };
+
+    utterance.onerror = () => {
+      setActiveSpeechIdx(null);
+      setIsSpeechPaused(false);
+    };
+
+    setActiveSpeechIdx(idx);
+    setIsSpeechPaused(false);
+    synth.speak(utterance);
+  };
 
   // BUG FIX 2: Map short language codes to the full names the /translate
   // backend expects. Previously only 'hi' -> Hindi was handled; all others
@@ -87,7 +136,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
     const conceptLabel = userText.toLowerCase().includes('loop') ? 'Loop Iteration' : userText.toLowerCase().includes('error') ? 'Error Debugging' : 'CS Concepts';
 
     try {
-      const res = await askTutor(userText, 'Aarav');
+      const res = await askTutor(userText, userName || 'Aarav');
       let replyText = res?.reply || res?.response || res?.answer;
 
       if (!replyText || res?.error) {
@@ -100,7 +149,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
         }
 
         if (selectedLang !== 'en') {
-          const trans = await translateText(baseEn, selectedLang, 'Aarav');
+          const trans = await translateText(baseEn, selectedLang, userName || 'Aarav');
           replyText = trans?.translatedText || baseEn;
         } else {
           replyText = baseEn;
@@ -308,9 +357,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
                     Mapped NCERT Concept: <strong>{m.concept}</strong>
                   </span>
                   <button
-                    onClick={() =>
-                      speakText(m.text, getLocaleCode(selectedLang))
-                    }
+                    onClick={() => handleSpeakToggle(idx, m.text)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -326,7 +373,13 @@ export default function AIMentorPage({ currentLang, islMode }) {
                     }}
                   >
                     <Volume2 size={14} />
-                    <span>Listen</span>
+                    <span>
+                      {activeSpeechIdx === idx
+                        ? isSpeechPaused
+                          ? "Resume"
+                          : "Pause"
+                        : "Listen"}
+                    </span>
                   </button>
                   <button
                     onClick={() => triggerIslModal(m.concept, m.englishText)}
