@@ -1,3 +1,5 @@
+node_modules
+.env
 # Root .gitignore for Decode-SIH-2026
 
 # Node dependencies
