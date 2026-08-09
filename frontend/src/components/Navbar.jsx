@@ -71,7 +71,7 @@ export default function Navbar({
               backgroundColor: '#16A34A',
               display: 'inline-block'
             }}></span>
-            Hackathon MVP Mode
+            Backend Live: <strong style={{ color: 'var(--accent)' }}>decode-sih-2026.onrender.com</strong>
           </div>
           <span>•</span>
           <span>Problem Statement: <strong>Inclusive Education AI</strong></span>

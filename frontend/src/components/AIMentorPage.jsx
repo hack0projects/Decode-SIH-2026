@@ -12,6 +12,7 @@ import {
   Volume2
 } from 'lucide-react';
 import ISLVideoPlayerModal from './ISLVideoPlayerModal';
+import { askTutor, translateText } from '../services/api';
 
 export default function AIMentorPage({ currentLang, islMode }) {
   const [selectedLang, setSelectedLang] = useState(currentLang || 'hi');
@@ -35,7 +36,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
     "Explain functions using a simple recipe analogy."
   ];
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!inputQuery.trim()) return;
 
@@ -44,26 +45,27 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
     setMessages(prev => [...prev, { role: 'user', text: userText }]);
 
-    // Socratic response logic
-    setTimeout(() => {
-      let replyText = "";
-      let conceptLabel = "Logic Concept";
+    let conceptLabel = userText.toLowerCase().includes('loop') ? 'Loop Iteration' : userText.toLowerCase().includes('error') ? 'Error Debugging' : 'CS Concepts';
 
-      if (userText.toLowerCase().includes('loop')) {
-        conceptLabel = "Loop Iteration";
-        replyText = selectedLang === 'hi' 
-          ? 'लूप (Loop) का मतलब है किसी काम को बार-बार दोहराना। सोचिए जब आप स्कूल के मैदान के 5 चक्कर लगाते हैं: चक्कर 1 से शुरू करके 5 तक गिनती बढ़ती है। कोड में भी शर्त पूरी होने तक काम दोहराया जाता है।'
-          : 'A loop means repeating an action multiple times. Imagine running 5 laps around your school ground: you count from 1 to 5. In code, the action repeats until the condition turns false!';
-      } else if (userText.toLowerCase().includes('indexerror') || userText.toLowerCase().includes('error')) {
-        conceptLabel = "List Indexing";
-        replyText = selectedLang === 'hi'
-          ? 'यह एरर तब आता है जब आप किसी लिस्ट के ऐसे डिब्बे का सामान ढूंढ रहे हैं जो मौजूद ही नहीं है! जैसे अगर लिस्ट में 3 चीजें हैं (इंडेक्स 0, 1, 2) और आप इंडेक्स 5 मांग रहे हैं।'
-          : 'This error happens when you ask for an item at a box number that doesn\'t exist in your list! If a list has 3 items (indexes 0, 1, 2) and you ask for index 5, Python gives this warning.';
-      } else {
-        conceptLabel = "Programming Basics";
-        replyText = selectedLang === 'hi'
-          ? 'शानदार सवाल! इसे सरल बनाने के लिए: प्रोग्रामिंग कंप्यूटर को दी जाने वाली रेसिपी की तरह है। निर्देश एक-एक करके क्रमानुसार (step-by-step) लिखे जाते हैं।'
-          : 'Great question! Think of programming like writing a cooking recipe for a robot. The instructions must be executed step-by-step in exact order.';
+    try {
+      const res = await askTutor(userText, 'Aarav');
+      let replyText = res?.reply || res?.response || res?.answer;
+
+      if (!replyText || res?.error) {
+        // Fallback with live translation
+        let baseEn = 'Programming concepts are best understood by practicing small examples!';
+        if (userText.toLowerCase().includes('loop')) {
+          baseEn = 'A loop repeats instructions until a condition turns false, like running laps around a track.';
+        } else if (userText.toLowerCase().includes('error')) {
+          baseEn = 'Syntax errors happen when instructions are incomplete. Check for missing quotes or parentheses.';
+        }
+        
+        if (selectedLang !== 'en') {
+          const trans = await translateText(baseEn, selectedLang, 'Aarav');
+          replyText = trans?.translatedText || baseEn;
+        } else {
+          replyText = baseEn;
+        }
       }
 
       setMessages(prev => [...prev, {
@@ -72,7 +74,14 @@ export default function AIMentorPage({ currentLang, islMode }) {
         islAvailable: true,
         concept: conceptLabel
       }]);
-    }, 800);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        text: 'लूप (Loop) का मतलब है किसी काम को बार-बार दोहराना। सोचिए जब आप मैदान के चक्कर लगाते हैं: शर्त पूरी होने तक गिनती चलती रहती है।',
+        islAvailable: true,
+        concept: conceptLabel
+      }]);
+    }
   };
 
   const triggerIslModal = (concept) => {
