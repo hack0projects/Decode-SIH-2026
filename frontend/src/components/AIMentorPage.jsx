@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Bot,
   Languages,
@@ -29,6 +29,41 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
   const [isIslModalOpen, setIsIslModalOpen] = useState(false);
   const [activeIslConcept, setActiveIslConcept] = useState("");
+  const [activeIslDescription, setActiveIslDescription] = useState("");
+
+  // BUG FIX 2: Map short language codes to the full names the /translate
+  // backend expects. Previously only 'hi' -> Hindi was handled; all others
+  // fell through to the English else branch and were never translated.
+  const LANG_FULL_NAMES = {
+    hi: "Hindi",
+    ta: "Tamil",
+    te: "Telugu",
+    kn: "Kannada",
+    mr: "Marathi",
+    bn: "Bengali",
+    gu: "Gujarati",
+  };
+
+  const BASE_URL = "https://decode-sih-2026.onrender.com";
+
+  // Translates English text to the selected regional language via backend API.
+  // Returns translated text, or the original if translation fails.
+  const translateReply = useCallback(async (englishText, langCode, studentName) => {
+    const targetLanguage = LANG_FULL_NAMES[langCode];
+    if (!targetLanguage) return englishText; // 'en' — no translation needed
+    try {
+      const res = await fetch(`${BASE_URL}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: englishText, targetLanguage, studentName }),
+      });
+      const data = await res.json();
+      // Backend returns { translatedText: "..." }
+      return data.translatedText || englishText;
+    } catch {
+      return englishText; // graceful fallback to English on network error
+    }
+  }, []);
 
   const sampleQuestions = [
     "What is the difference between a for loop and a while loop?",
@@ -37,7 +72,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
     "Explain functions using a simple recipe analogy.",
   ];
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!inputQuery.trim()) return;
 
@@ -46,48 +81,51 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
 
-    // Socratic response logic
-    setTimeout(() => {
-      let replyText = "";
-      let conceptLabel = "Logic Concept";
+    // Derive English base reply and concept label
+    let englishReply = "";
+    let conceptLabel = "Logic Concept";
 
-      if (userText.toLowerCase().includes("loop")) {
-        conceptLabel = "Loop Iteration";
-        replyText =
-          selectedLang === "hi"
-            ? "लूप (Loop) का मतलब है किसी काम को बार-बार दोहराना। सोचिए जब आप स्कूल के मैदान के 5 चक्कर लगाते हैं: चक्कर 1 से शुरू करके 5 तक गिनती बढ़ती है। कोड में भी शर्त पूरी होने तक काम दोहराया जाता है।"
-            : "A loop means repeating an action multiple times. Imagine running 5 laps around your school ground: you count from 1 to 5. In code, the action repeats until the condition turns false!";
-      } else if (
-        userText.toLowerCase().includes("indexerror") ||
-        userText.toLowerCase().includes("error")
-      ) {
-        conceptLabel = "List Indexing";
-        replyText =
-          selectedLang === "hi"
-            ? "यह एरर तब आता है जब आप किसी लिस्ट के ऐसे डिब्बे का सामान ढूंढ रहे हैं जो मौजूद ही नहीं है! जैसे अगर लिस्ट में 3 चीजें हैं (इंडेक्स 0, 1, 2) और आप इंडेक्स 5 मांग रहे हैं।"
-            : "This error happens when you ask for an item at a box number that doesn't exist in your list! If a list has 3 items (indexes 0, 1, 2) and you ask for index 5, Python gives this warning.";
-      } else {
-        conceptLabel = "Programming Basics";
-        replyText =
-          selectedLang === "hi"
-            ? "शानदार सवाल! इसे सरल बनाने के लिए: प्रोग्रामिंग कंप्यूटर को दी जाने वाली रेसिपी की तरह है। निर्देश एक-एक करके क्रमानुसार (step-by-step) लिखे जाते हैं।"
-            : "Great question! Think of programming like writing a cooking recipe for a robot. The instructions must be executed step-by-step in exact order.";
-      }
+    if (userText.toLowerCase().includes("loop")) {
+      conceptLabel = "Loop Iteration";
+      englishReply =
+        "A loop means repeating an action multiple times. Imagine running 5 laps around your school ground: you count from 1 to 5. In code, the action repeats until the condition turns false!";
+    } else if (
+      userText.toLowerCase().includes("indexerror") ||
+      userText.toLowerCase().includes("error")
+    ) {
+      conceptLabel = "List Indexing";
+      englishReply =
+        "This error happens when you ask for an item at a box number that doesn't exist in your list! If a list has 3 items (indexes 0, 1, 2) and you ask for index 5, Python gives this warning.";
+    } else {
+      conceptLabel = "Programming Basics";
+      englishReply =
+        "Great question! Think of programming like writing a cooking recipe for a robot. The instructions must be executed step-by-step in exact order.";
+    }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: replyText,
-          islAvailable: true,
-          concept: conceptLabel,
-        },
-      ]);
-    }, 800);
+    // BUG FIX 2: For any non-English language selected, call the /translate
+    // backend. Previously only 'hi' was handled; 'ta', 'te', 'kn', 'mr',
+    // 'bn', 'gu' all fell through to the else and returned English text.
+    const replyText =
+      selectedLang === "en"
+        ? englishReply
+        : await translateReply(englishReply, selectedLang, "Student");
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        text: replyText,
+        islAvailable: true,
+        concept: conceptLabel,
+        // Store English base so ISL subtitle is always descriptive
+        englishText: englishReply,
+      },
+    ]);
   };
 
-  const triggerIslModal = (concept) => {
+  const triggerIslModal = (concept, description) => {
     setActiveIslConcept(concept);
+    setActiveIslDescription(description || "");
     setIsIslModalOpen(true);
   };
 
@@ -291,7 +329,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
                     <span>Listen</span>
                   </button>
                   <button
-                    onClick={() => triggerIslModal(m.concept)}
+                    onClick={() => triggerIslModal(m.concept, m.englishText)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -369,7 +407,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
         isOpen={isIslModalOpen}
         onClose={() => setIsIslModalOpen(false)}
         conceptName={activeIslConcept}
-        signDescription="Sign language gesture explanation for programming logic"
+        signDescription={activeIslDescription}
       />
     </div>
   );

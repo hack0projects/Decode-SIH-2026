@@ -10,6 +10,9 @@ export default function ISLVideoPlayerModal({
   const [mappingData, setMappingData] = React.useState(null);
   const [displayContent, setDisplayContent] = React.useState(null);
   const [letterIndex, setLetterIndex] = React.useState(0);
+  // For multi-word video cycling
+  const [videoClips, setVideoClips] = React.useState([]);
+  const [clipIndex, setClipIndex] = React.useState(0);
 
   // Load the ISL mapping file once
   React.useEffect(() => {
@@ -19,27 +22,34 @@ export default function ISLVideoPlayerModal({
       .catch((err) => console.error("ISL mapping load failed:", err));
   }, []);
 
-  // Figure out what to show whenever concept or mapping changes
+  // BUG FIX 1: Collect ALL matched word clips for the full concept phrase,
+  // not just the first matched word. This means a concept like
+  // "Loop Iteration" can show a clip for "loop" AND one for "iteration"
+  // in sequence, giving a full concept explanation rather than one word.
   React.useEffect(() => {
     if (!mappingData || !conceptName || !isOpen) return;
     setLetterIndex(0);
+    setClipIndex(0);
+
+    const skipWords = [
+      "a", "an", "the", "is", "in", "of", "and", "or", "for",
+      "with", "to", "from", "at", "by", "on",
+    ];
     const words = conceptName.toLowerCase().split(/\s+/);
-    let matchedWord = words.find((w) => mappingData.known_words[w]);
-    if (matchedWord) {
-      setDisplayContent({
-        type: "video",
-        path: `/isl/${mappingData.known_words[matchedWord]}`,
-        word: matchedWord,
-      });
+
+    // Collect every word that has a known ISL video
+    const matched = words
+      .filter((w) => !skipWords.includes(w) && mappingData.known_words?.[w])
+      .map((w) => ({ type: "video", path: `/isl/${mappingData.known_words[w]}`, word: w }));
+
+    if (matched.length > 0) {
+      // We have at least one video — store all clips and show the first
+      setVideoClips(matched);
+      setDisplayContent(matched[0]);
     } else {
-      const skipWords = [
-        "iteration",
-        "basics",
-        "logic",
-        "concept",
-        "programming",
-      ];
+      // No known video — fingerspell the most meaningful word
       const target = words.find((w) => !skipWords.includes(w)) || words[0];
+      setVideoClips([]);
       setDisplayContent({ type: "fingerspell", word: target });
     }
   }, [mappingData, conceptName, isOpen]);
@@ -49,10 +59,25 @@ export default function ISLVideoPlayerModal({
     if (displayContent?.type !== "fingerspell") return;
     const word = displayContent.word.toUpperCase();
     if (letterIndex >= word.length) return;
-
     const timer = setTimeout(() => setLetterIndex(letterIndex + 1), 500);
     return () => clearTimeout(timer);
   }, [displayContent, letterIndex]);
+
+  // Advance to the next video clip in the sequence
+  const handleNextClip = () => {
+    const next = clipIndex + 1;
+    if (next < videoClips.length) {
+      setClipIndex(next);
+      setDisplayContent(videoClips[next]);
+    }
+  };
+  const handlePrevClip = () => {
+    const prev = clipIndex - 1;
+    if (prev >= 0) {
+      setClipIndex(prev);
+      setDisplayContent(videoClips[prev]);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -142,7 +167,7 @@ export default function ISLVideoPlayerModal({
               autoPlay
               loop
               muted
-              style={{ maxHeight: "220px", borderRadius: "8px" }}
+              style={{ maxHeight: "200px", borderRadius: "8px" }}
             />
           )}
 
@@ -181,6 +206,39 @@ export default function ISLVideoPlayerModal({
             </div>
           )}
 
+          {/* Multi-clip navigation — shown only when there are multiple matched words */}
+          {videoClips.length > 1 && (
+            <div style={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "rgba(0,0,0,0.7)",
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "12px",
+              color: "#FFFFFF"
+            }}>
+              <button
+                onClick={handlePrevClip}
+                disabled={clipIndex === 0}
+                style={{ color: clipIndex === 0 ? "#666" : "#FCD34D", background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}
+              >◀</button>
+              <span style={{ fontWeight: "700" }}>
+                {videoClips[clipIndex]?.word?.toUpperCase()} ({clipIndex + 1}/{videoClips.length})
+              </span>
+              <button
+                onClick={handleNextClip}
+                disabled={clipIndex === videoClips.length - 1}
+                style={{ color: clipIndex === videoClips.length - 1 ? "#666" : "#FCD34D", background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}
+              >▶</button>
+            </div>
+          )}
+
+          {/* BUG FIX 1: Subtitle now shows the full signDescription passed by the
+              caller (the actual concept explanation) instead of a generic fallback. */}
           <div
             style={{
               position: "absolute",
@@ -194,20 +252,13 @@ export default function ISLVideoPlayerModal({
               border: "1px solid rgba(255,255,255,0.2)",
             }}
           >
-            <div
-              style={{
-                color: "#FCD34D",
-                fontWeight: "700",
-                marginBottom: "2px",
-              }}
-            >
-              {displayContent?.type === "video"
-                ? "Sign Video:"
-                : "Fingerspelling:"}
+            <div style={{ color: "#FCD34D", fontWeight: "700", marginBottom: "4px" }}>
+              {displayContent?.type === "video" ? `ISL: "${conceptName}"` : "Fingerspelling:"}
             </div>
-            <div>
-              {signDescription ||
-                `Showing ISL for "${displayContent?.word || conceptName}"`}
+            <div style={{ lineHeight: "1.4" }}>
+              {signDescription
+                ? signDescription
+                : `Sign gesture for the concept "${conceptName}"`}
             </div>
           </div>
         </div>
