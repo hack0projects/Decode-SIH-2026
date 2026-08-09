@@ -1,125 +1,59 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
-import LandingPage from './components/LandingPage';
-import HomeDashboard from './components/HomeDashboard';
-import ProjectsPage from './components/ProjectsPage';
-import MyProjectsWorkspace from './components/MyProjectsWorkspace';
-import AIMentorPage from './components/AIMentorPage';
 import TeacherDashboard from './components/TeacherDashboard';
-import NCERTSection from './components/NCERTSection';
+import AIMentorPage from './components/AIMentorPage';
+import MyProjectsWorkspace from './components/MyProjectsWorkspace';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('landing');
-  const [islMode, setIslMode] = useState(true);
-  const [currentLang, setCurrentLang] = useState('hi');
-  const [userRole, setUserRole] = useState('student');
-  const [selectedProject, setSelectedProject] = useState({
-    id: 'calculator',
-    title: 'Smart Calculator',
-    emoji: '🧮',
-    codeSnippet: `# CodeSeekho AI — Smart Calculator Project
-# Problem Statement: Calculate sum of numbers using a while loop
-
-total = 0
-count = 1
-
-while count <= 5:
-    total = total + count
-    print(f"Step {count}: Current sum is {total}")
-    count = count + 1
-
-print("Final Total Sum:", total)
-`
+  // Developer Bypass: Hackathon demo ke liye pre-filled user state
+  const [user, setUser] = useState({ 
+    displayName: "Sribendu Prasad Muduli", 
+    email: "sribendu@sih.com",
+    role: "student" // 'student' ya 'teacher'
   });
+  
+  // Active navigation tab state
+  const [activeTab, setActiveTab] = useState('workspace');
 
   return (
-    <div className="app-container">
-      {/* Top Header */}
-      <Navbar
-        currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
-        islMode={islMode}
-        setIslMode={setIslMode}
-        currentLang={currentLang}
-        setCurrentLang={setCurrentLang}
-        userRole={userRole}
-        setUserRole={setUserRole}
-      />
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+      {/* Top Navbar */}
+      <Navbar user={user} activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Main Content Body */}
-      <main className="main-content">
-        {currentTab === 'landing' && (
-          <LandingPage
-            setCurrentTab={setCurrentTab}
-            islMode={islMode}
-            setIslMode={setIslMode}
-          />
-        )}
+      {/* Main Content Area */}
+      <main className="flex-grow flex flex-col items-center justify-start p-4 max-w-7xl mx-auto w-full">
+        
+        {/* Responsive Navigation Tab Buttons */}
+        <div className="flex flex-wrap justify-center gap-4 mb-6 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+          <button 
+            onClick={() => setActiveTab('workspace')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${activeTab === 'workspace' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            Code Workspace & Notebook 💻
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('mentor')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${activeTab === 'mentor' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            Socratic AI Mentor 🤖
+          </button>
 
-        {currentTab === 'home' && (
-          <HomeDashboard
-            setCurrentTab={setCurrentTab}
-            islMode={islMode}
-            currentLang={currentLang}
-          />
-        )}
-
-        {currentTab === 'projects' && (
-          <ProjectsPage
-            setCurrentTab={setCurrentTab}
-            setSelectedProject={setSelectedProject}
-          />
-        )}
-
-        {currentTab === 'my-workspace' && (
-          <MyProjectsWorkspace
-            selectedProject={selectedProject}
-            islMode={islMode}
-            currentLang={currentLang}
-          />
-        )}
-
-        {currentTab === 'ai-mentor' && (
-          <AIMentorPage
-            currentLang={currentLang}
-            islMode={islMode}
-          />
-        )}
-
-        {currentTab === 'ncert' && (
-          <NCERTSection
-            setCurrentTab={setCurrentTab}
-            setSelectedProject={setSelectedProject}
-          />
-        )}
-
-        {currentTab === 'teacher' && (
-          <TeacherDashboard />
-        )}
-      </main>
-
-      {/* Minimal Footer */}
-      <footer style={{
-        backgroundColor: 'var(--bg-card)',
-        borderTop: '1px solid var(--border-light)',
-        padding: '20px 24px',
-        textAlign: 'center',
-        fontSize: '13px',
-        color: 'var(--text-muted)'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <strong>CodeSeekho AI</strong> — Inclusive CS Education Platform (Hackathon MVP)
-          </div>
-          <div style={{ display: 'flex', gap: '16px', fontSize: '12px' }}>
-            <span>NCERT CS Curriculum Aligned</span>
-            <span>•</span>
-            <span>Indian Sign Language (ISL) Engine</span>
-            <span>•</span>
-            <span>Member 3 Frontend Deliverable</span>
-          </div>
+          <button 
+            onClick={() => setActiveTab('teacher')}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${activeTab === 'teacher' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            Teacher Portal & Analytics 📊
+          </button>
         </div>
-      </footer>
+
+        {/* Dynamic Component Rendering based on Active Tab */}
+        <div className="w-full flex-grow">
+          {activeTab === 'workspace' && <MyProjectsWorkspace user={user} />}
+          {activeTab === 'mentor' && <AIMentorPage user={user} />}
+          {activeTab === 'teacher' && <TeacherDashboard />}
+        </div>
+      </main>
     </div>
   );
 }
