@@ -122,9 +122,10 @@ Answer + citation returned to backend → frontend
 | Area | Owner | Depends on this component? |
 |---|---|---|
 | Backend (`/ask-tutor` route, Supabase logging) | Kritika | Yes — calls this Dify API directly |
-| Frontend (AI Mentor Lab UI, dashboard drawer) | Frontend Lead | Yes — via Kritika's backend |
-| Translation (`/translate`) | Bhashini teammate | Possibly — TBD on integration order |
-| ISL support | Unassigned | Possibly — TBD |
+| Frontend (AI Mentor Lab UI, dashboard drawer) | Ajit | Yes — via Kritika's backend |
+| Translation (`/translate`) nd ISL Support | Anshita | Possibly — TBD on integration order |
+| Dashboard | Sribendu |  |
+
 
 ---
 
