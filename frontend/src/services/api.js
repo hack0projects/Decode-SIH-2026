@@ -172,3 +172,36 @@ export async function getProgressOverview() {
     };
   }
 }
+
+/**
+ * Ask the NCERT Socratic Chatbot (/ask-ncert-tutor)
+ * Falls back to /ask-tutor if /ask-ncert-tutor is not implemented/fails.
+ * @param {string} question 
+ * @param {string} context 
+ * @param {string} studentName 
+ */
+export async function askNcertTutor(question, context = '', studentName = 'Aarav') {
+  try {
+    const response = await fetch(`${BASE_URL}/ask-ncert-tutor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question,
+        context,
+        studentName
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Endpoint status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // returns { answer, success }
+  } catch (err) {
+    console.warn('API /ask-ncert-tutor not ready or failed, falling back to /ask-tutor:', err.message);
+    const combinedPrompt = context ? `[Context: ${context}] Question: ${question}` : question;
+    return askTutor(combinedPrompt, studentName);
+  }
+}
+

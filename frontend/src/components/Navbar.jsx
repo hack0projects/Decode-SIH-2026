@@ -139,12 +139,13 @@ export default function Navbar({
 
       {/* Main Navigation Bar */}
       <div style={{
-        padding: '12px 24px',
+        padding: '10px 16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        maxWidth: '1400px',
-        margin: '0 auto'
+        maxWidth: '1600px',
+        margin: '0 auto',
+        gap: '8px'
       }}>
         {/* Brand Logo */}
         <div 
@@ -164,24 +165,24 @@ export default function Navbar({
             backgroundColor: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             color: '#FFFFFF',
             flexShrink: 0
           }}>
-            <Code2 size={22} strokeWidth={2.5} style={{ display: 'block' }} />
+            <Code2 size={20} strokeWidth={2.5} style={{ display: 'block' }} />
           </div>
           <div>
-            <div style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--text-main)' }}>
+            <div style={{ fontSize: '16px', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
               CodeSeekho <span style={{ color: 'var(--accent)' }}>AI</span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '-2px' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '-2px', whiteSpace: 'nowrap' }}>
               Inclusive CS Education Platform
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs - Outlined Blocks */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap' }}>
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = currentTab === item.id;
@@ -199,10 +200,10 @@ export default function Navbar({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
+                  gap: '5px',
+                  padding: '5px 9px',
                   borderRadius: 'var(--radius-md)',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: isActive ? '700' : '600',
                   whiteSpace: 'nowrap',
                   color: isLocked ? 'var(--text-faint)' : isActive ? 'var(--accent)' : 'var(--text-main)',
@@ -223,14 +224,14 @@ export default function Navbar({
         </nav>
 
         {/* User Role & Quick Landing Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           <button
             onClick={() => setCurrentTab('landing')}
             style={{
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: '600',
               color: 'var(--text-muted)',
-              padding: '6px 12px',
+              padding: '5px 9px',
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-medium)',
               backgroundColor: 'var(--bg-card)',
@@ -242,16 +243,16 @@ export default function Navbar({
           </button>
 
           {userName ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
+                gap: '5px',
+                padding: '5px 9px',
                 backgroundColor: 'var(--bg-subtle)',
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-medium)',
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: '700',
                 whiteSpace: 'nowrap'
               }}>

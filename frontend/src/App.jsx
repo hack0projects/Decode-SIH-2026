@@ -140,8 +140,6 @@ print("Final Total Sum:", total)
             <span>NCERT CS Curriculum Aligned</span>
             <span>•</span>
             <span>Indian Sign Language (ISL) Engine</span>
-            <span>•</span>
-            <span>Member 3 Frontend Deliverable</span>
           </div>
         </div>
       </footer>
