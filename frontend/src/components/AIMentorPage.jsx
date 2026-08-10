@@ -1,31 +1,18 @@
 import React, { useState, useCallback } from "react";
-import {
-  Bot,
-  Languages,
-  Hand,
-  Send,
-  Sparkles,
-  BookOpen,
-  HelpCircle,
-  Code2,
-  CheckCircle2,
-  Volume2,
-  Mic,
-} from "lucide-react";
-import ISLVideoPlayerModal from "./ISLVideoPlayerModal";
-import { startListening, speakText, getLocaleCode } from "./speechUtils";
-  Volume2
-} from 'lucide-react';
-import ISLVideoPlayerModal from './ISLVideoPlayerModal';
-import { askTutor, translateText } from '../services/api';
+import { Bot, Languages, Hand, Send, Volume2, Mic } from "lucide-react";
+import ISLVideoPlayerModal from "../components/ISLVideoPlayerModal";
+import { startListening, speakText, getLocaleCode } from "../components/speechUtils";
+import { askTutor, translateText } from "../services/api";
 
-export default function AIMentorPage({ currentLang, islMode }) {
+export default function AIMentorPage({ currentLang }) {
   const [selectedLang, setSelectedLang] = useState(currentLang || "hi");
   const [inputQuery, setInputQuery] = useState("");
   const [messages, setMessages] = useState([
     {
       role: "assistant",
       text: "Namaste! I am your CodeSeekho AI Mentor. I help Class 8+ students understand programming concepts in plain regional languages without spoiling answers with direct code dumps. How can I help you today?",
+      englishText:
+        "Namaste! I am your CodeSeekho AI Mentor. I help Class 8+ students understand programming concepts in plain regional languages without spoiling answers with direct code dumps. How can I help you today?",
       islAvailable: true,
       concept: "Introduction",
     },
@@ -33,11 +20,9 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
   const [isIslModalOpen, setIsIslModalOpen] = useState(false);
   const [activeIslConcept, setActiveIslConcept] = useState("");
-  const [activeIslDescription, setActiveIslDescription] = useState("");
+  const [activeIslText, setActiveIslText] = useState("");
 
-  // BUG FIX 2: Map short language codes to the full names the /translate
-  // backend expects. Previously only 'hi' -> Hindi was handled; all others
-  // fell through to the English else branch and were never translated.
+  // Map short language codes to the full names the /translate backend expects.
   const LANG_FULL_NAMES = {
     hi: "Hindi",
     ta: "Tamil",
@@ -52,22 +37,28 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
   // Translates English text to the selected regional language via backend API.
   // Returns translated text, or the original if translation fails.
-  const translateReply = useCallback(async (englishText, langCode, studentName) => {
-    const targetLanguage = LANG_FULL_NAMES[langCode];
-    if (!targetLanguage) return englishText; // 'en' — no translation needed
-    try {
-      const res = await fetch(`${BASE_URL}/translate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: englishText, targetLanguage, studentName }),
-      });
-      const data = await res.json();
-      // Backend returns { translatedText: "..." }
-      return data.translatedText || englishText;
-    } catch {
-      return englishText; // graceful fallback to English on network error
-    }
-  }, []);
+  const translateReply = useCallback(
+    async (englishText, langCode, studentName) => {
+      const targetLanguage = LANG_FULL_NAMES[langCode];
+      if (!targetLanguage) return englishText; // 'en' — no translation needed
+      try {
+        const res = await fetch(`${BASE_URL}/translate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: englishText,
+            targetLanguage,
+            studentName,
+          }),
+        });
+        const data = await res.json();
+        return data.translatedText || englishText;
+      } catch {
+        return englishText; // graceful fallback to English on network error
+      }
+    },
+    [],
+  );
 
   const sampleQuestions = [
     "What is the difference between a for loop and a while loop?",
@@ -85,49 +76,74 @@ export default function AIMentorPage({ currentLang, islMode }) {
 
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
 
-    // Derive English base reply and concept label
-    let englishReply = "";
-    let conceptLabel = "Logic Concept";
+    const conceptLabel = userText.toLowerCase().includes("loop")
+      ? "Loop Iteration"
+      : userText.toLowerCase().includes("error")
+        ? "Error Debugging"
+        : "CS Concepts";
 
-    let conceptLabel = userText.toLowerCase().includes('loop') ? 'Loop Iteration' : userText.toLowerCase().includes('error') ? 'Error Debugging' : 'CS Concepts';
+    // englishText is ALWAYS captured, regardless of which language ends
+    // up on screen. The ISL modal reads from this — not from `displayText`
+    // — so ISL sign matching works the same for every language.
+    let englishText = "";
+    let displayText = "";
 
     try {
-      const res = await askTutor(userText, 'Aarav');
-      let replyText = res?.reply || res?.response || res?.answer;
+      const res = await askTutor(userText, "Aarav");
+      const tutorReply = res?.reply || res?.response || res?.answer;
 
-      if (!replyText || res?.error) {
-        // Fallback with live translation
-        let baseEn = 'Programming concepts are best understood by practicing small examples!';
-        if (userText.toLowerCase().includes('loop')) {
-          baseEn = 'A loop repeats instructions until a condition turns false, like running laps around a track.';
-        } else if (userText.toLowerCase().includes('error')) {
-          baseEn = 'Syntax errors happen when instructions are incomplete. Check for missing quotes or parentheses.';
+      if (tutorReply && !res?.error) {
+        // askTutor may already respond in the selected language depending
+        // on backend behavior; we still need an English anchor for ISL,
+        // so ask for an English version too when the UI isn't English.
+        englishText = res?.englishReply || tutorReply;
+        displayText =
+          selectedLang !== "en" && !res?.englishReply
+            ? await translateReply(tutorReply, selectedLang, "Aarav")
+            : tutorReply;
+      } else {
+        // Fallback canned answers with live translation.
+        englishText =
+          "Programming concepts are best understood by practicing small examples!";
+        if (userText.toLowerCase().includes("loop")) {
+          englishText =
+            "A loop repeats instructions until a condition turns false, like running laps around a track.";
+        } else if (userText.toLowerCase().includes("error")) {
+          englishText =
+            "Syntax errors happen when instructions are incomplete. Check for missing quotes or parentheses.";
         }
-        
-        if (selectedLang !== 'en') {
-          const trans = await translateText(baseEn, selectedLang, 'Aarav');
-          replyText = trans?.translatedText || baseEn;
+
+        if (selectedLang !== "en") {
+          const trans = await translateText(englishText, selectedLang, "Aarav");
+          displayText = trans?.translatedText || englishText;
         } else {
-          replyText = baseEn;
+          displayText = englishText;
         }
       }
+    } catch (err) {
+      console.error("AI Mentor request failed:", err);
+      englishText =
+        "Something went wrong reaching the mentor. Please try asking again.";
+      displayText = englishText;
+    }
 
     setMessages((prev) => [
       ...prev,
       {
         role: "assistant",
-        text: replyText,
+        text: displayText,
         islAvailable: true,
         concept: conceptLabel,
-        // Store English base so ISL subtitle is always descriptive
-        englishText: englishReply,
+        // Store the English base so ISL sign matching always works,
+        // no matter which language `text` above is displayed in.
+        englishText,
       },
     ]);
   };
 
-  const triggerIslModal = (concept, description) => {
+  const triggerIslModal = (concept, englishText) => {
     setActiveIslConcept(concept);
-    setActiveIslDescription(description || "");
+    setActiveIslText(englishText || "");
     setIsIslModalOpen(true);
   };
 
@@ -144,7 +160,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
         style={{
           display: "flex",
           alignItems: "center",
-          justify: "space-between",
+          justifyContent: "space-between",
           marginBottom: "28px",
         }}
       >
@@ -225,9 +241,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
           {sampleQuestions.map((q, i) => (
             <button
               key={i}
-              onClick={() => {
-                setInputQuery(q);
-              }}
+              onClick={() => setInputQuery(q)}
               style={{
                 fontSize: "13px",
                 padding: "6px 14px",
@@ -251,7 +265,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
           minHeight: "440px",
           display: "flex",
           flexDirection: "column",
-          justify: "space-between",
+          justifyContent: "space-between",
           padding: "0",
           overflow: "hidden",
         }}
@@ -288,7 +302,6 @@ export default function AIMentorPage({ currentLang, islMode }) {
             >
               <div>{m.text}</div>
 
-              {/* ISL Video Available Pill inside message */}
               {m.islAvailable && (
                 <div
                   style={{
@@ -297,7 +310,9 @@ export default function AIMentorPage({ currentLang, islMode }) {
                     borderTop: "1px solid var(--border-light)",
                     display: "flex",
                     alignItems: "center",
-                    justify: "space-between",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: "8px",
                   }}
                 >
                   <span
@@ -309,45 +324,46 @@ export default function AIMentorPage({ currentLang, islMode }) {
                   >
                     Mapped NCERT Concept: <strong>{m.concept}</strong>
                   </span>
-                  <button
-                    onClick={() =>
-                      speakText(m.text, getLocaleCode(selectedLang))
-                    }
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "12px",
-                      fontWeight: "700",
-                      color: "var(--accent)",
-                      backgroundColor: "var(--bg-card)",
-                      padding: "4px 10px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid var(--border-medium)",
-                      marginRight: "8px",
-                    }}
-                  >
-                    <Volume2 size={14} />
-                    <span>Listen</span>
-                  </button>
-                  <button
-                    onClick={() => triggerIslModal(m.concept, m.englishText)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "12px",
-                      fontWeight: "700",
-                      color: "#D97706",
-                      backgroundColor: "#FEF3C7",
-                      padding: "4px 10px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "1px solid #FCD34D",
-                    }}
-                  >
-                    <Hand size={14} />
-                    <span>Watch ISL Sign Video</span>
-                  </button>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={() =>
+                        speakText(m.text, getLocaleCode(selectedLang))
+                      }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "12px",
+                        fontWeight: "700",
+                        color: "var(--accent)",
+                        backgroundColor: "var(--bg-card)",
+                        padding: "4px 10px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border-medium)",
+                      }}
+                    >
+                      <Volume2 size={14} />
+                      <span>Listen</span>
+                    </button>
+                    <button
+                      onClick={() => triggerIslModal(m.concept, m.englishText)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "12px",
+                        fontWeight: "700",
+                        color: "#D97706",
+                        backgroundColor: "#FEF3C7",
+                        padding: "4px 10px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid #FCD34D",
+                      }}
+                    >
+                      <Hand size={14} />
+                      <span>Watch ISL Sign Video</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -409,7 +425,7 @@ export default function AIMentorPage({ currentLang, islMode }) {
         isOpen={isIslModalOpen}
         onClose={() => setIsIslModalOpen(false)}
         conceptName={activeIslConcept}
-        signDescription={activeIslDescription}
+        fullText={activeIslText}
       />
     </div>
   );
