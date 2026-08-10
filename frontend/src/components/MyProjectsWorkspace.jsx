@@ -1,91 +1,109 @@
-import React, { useState } from 'react';
-import { runStudentCode } from '../api';
+import React, { useState, useEffect } from 'react';
 
-export default function MyProjectsWorkspace({ user }) {
-  const [code, setCode] = useState('// Write your code here...\nconsole.log("Hello, CodeSeekho AI!");');
-  const [language, setLanguage] = useState('javascript');
-  const [output, setOutput] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function MyProjectsWorkspace() {
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // User ka naam API me bhejne ke liye
-  const studentName = user?.displayName || 'Student';
+  useEffect(() => {
+    // 1. Student name encode karke live backend API call lagayi
+    const studentName = encodeURIComponent("Sribendu Prasad Muduli");
+    const apiUrl = `https://decode-sih-2026.onrender.com/student-profile/${studentName}`;
 
-  const handleRunCode = async () => {
-    if (!code.trim()) return;
-    
     setLoading(true);
-    setError(null);
-    setOutput('Running code on server...');
+    fetch(apiUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch data from live backend');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setProfileData(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("API Error:", err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
 
-    try {
-      // Backend (Kritika ki API) par code bhej rahe hain
-      const data = await runStudentCode(code, language, studentName);
-      
-      // Assume kar rahe hain Kritika ka backend { output: "result text" } bhej raha hai
-      setOutput(data.output || data.result || JSON.stringify(data));
-    } catch (err) {
-      console.error("Code Run Error:", err);
-      setError("Code run karne mein error aaya. API ya server check karo.");
-      setOutput('');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="text-blue-600 font-semibold text-lg animate-pulse">Loading live workspace data... 🚀</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 m-6 bg-red-50 border border-red-200 rounded-2xl text-red-600 shadow-sm">
+        <h3 className="font-bold text-lg">Backend Connection Error</h3>
+        <p className="text-sm mt-1">{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto w-full">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">Code Workspace 💻</h2>
-          
-          {/* Language Selector */}
-          <select 
-            className="p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="java">Java</option>
-          </select>
+    <div className="w-full max-w-6xl mx-auto space-y-8 p-6">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 rounded-3xl shadow-lg text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            Welcome back, {profileData?.studentName || 'Student'}! 👋
+          </h1>
+          <p className="text-blue-100 text-sm mt-2">
+            Workspace Status: <span className="font-semibold underline">{profileData?.status || 'Active'}</span>
+          </p>
+        </div>
+        <div className="bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-2xl text-sm font-medium border border-white/20 flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+          Live Backend Connected ⚡
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Current Score</h3>
+          <p className="text-3xl font-extrabold text-slate-800 mt-3">
+            {profileData?.score ?? 0} <span className="text-sm font-medium text-slate-500">pts</span>
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Code Editor Area */}
-          <div className="flex flex-col gap-4">
-            <textarea
-              className="w-full h-80 p-4 font-mono text-sm bg-slate-900 text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck="false"
-            ></textarea>
-            
-            <button
-              onClick={handleRunCode}
-              disabled={loading}
-              className={`py-3 rounded-xl font-semibold text-white transition-all shadow-sm ${
-                loading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
-              }`}
-            >
-              {loading ? 'Executing...' : 'Run Code ▶'}
-            </button>
-          </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Problems Solved</h3>
+          <p className="text-3xl font-extrabold text-slate-800 mt-3">
+            {profileData?.solvedProblems ?? 0}
+          </p>
+        </div>
 
-          {/* Output Area */}
-          <div className="flex flex-col">
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">Output / Terminal</h3>
-            <div className="w-full flex-grow p-4 font-mono text-sm bg-slate-50 border border-slate-300 rounded-xl overflow-auto whitespace-pre-wrap">
-              {error ? (
-                <span className="text-red-600">{error}</span>
-              ) : output ? (
-                <span className="text-slate-800">{output}</span>
-              ) : (
-                <span className="text-slate-400 italic">Code output will appear here...</span>
-              )}
-            </div>
-          </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Strong Topic</h3>
+          <p className="text-xl font-bold text-emerald-600 mt-3 truncate">
+            {profileData?.strongTopic || 'N/A'}
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+          <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider">Revision Status</h3>
+          <p className="text-xl font-bold text-amber-600 mt-3 truncate">
+            {profileData?.revisionStatus || 'Needs Revision'}
+          </p>
+        </div>
+      </div>
+
+      {/* Additional Workspace Workspace Analytics Section */}
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <h2 className="text-xl font-bold text-slate-800">Recent Activity & Progress</h2>
+        <p className="text-slate-500 text-sm">
+          Your live backend synchronization is active. All submissions and score metrics are automatically updated via Kritika's deployed Render service.
+        </p>
+        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 flex items-center justify-between text-sm">
+          <span className="text-slate-600 font-medium">Weak Topic Area:</span>
+          <span className="font-semibold text-rose-600">{profileData?.weakTopic || 'None recorded yet'}</span>
         </div>
       </div>
     </div>
