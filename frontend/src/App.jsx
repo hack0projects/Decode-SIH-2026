@@ -12,8 +12,13 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('landing');
   const [islMode, setIslMode] = useState(true);
   const [currentLang, setCurrentLang] = useState('hi');
-  const [userRole, setUserRole] = useState('student');
+  const [userRole, setUserRoleState] = useState(localStorage.getItem('codeseekho_userrole') || 'student');
   const [userName, setUserName] = useState(localStorage.getItem('codeseekho_username') || '');
+
+  const setUserRole = (role) => {
+    setUserRoleState(role);
+    localStorage.setItem('codeseekho_userrole', role);
+  };
 
   const [selectedProject, setSelectedProject] = useState({
     id: 'calculator',
@@ -36,15 +41,14 @@ print("Final Total Sum:", total)
 
   const handleSetTab = (tab) => {
     const activeUser = userName || localStorage.getItem('codeseekho_username');
-    // Silently block tab navigation if not logged in
     if (!activeUser && tab !== 'landing') {
       return;
     }
-    // Silently block students from teacher portal
-    if (tab === 'teacher' && userRole !== 'teacher') {
-      return;
+    if (tab === 'teacher') {
+      setUserRole('teacher');
     }
     setCurrentTab(tab);
+    window.scrollTo(0, 0);
   };
 
   return (

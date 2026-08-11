@@ -85,7 +85,13 @@ export default function NCERTSection({ setCurrentTab, setSelectedProject }) {
   const [isPausedSpeech, setIsPausedSpeech] = useState(false);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (chatMessages && chatMessages.length > 1) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [chatMessages]);
 
   // Cancel speech on chapter, grade, or subject switch
