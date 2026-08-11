@@ -136,7 +136,11 @@ export default function TeacherDashboard() {
               status: "Active & Excelling 🚀",
               strongTopic: "Recursion & Sorting",
               weakTopic: "Dynamic Programming",
-              revisionStatus: "Scheduled for tomorrow"
+              revisionStatus: "Scheduled for tomorrow",
+              topicScores: { arrays: 88, recursion: 95, dp: 52, graphs: 70, oops: 80 },
+              weeklyProgress: [60, 68, 75, 82, 88, 92, 95],
+              streakDays: 12,
+              accuracy: 89
             },
             {
               studentName: "Aman Sharma",
@@ -145,7 +149,11 @@ export default function TeacherDashboard() {
               status: "Good Progress 📈",
               strongTopic: "Arrays & Strings",
               weakTopic: "Graphs & Trees",
-              revisionStatus: "Due Today ⚠️"
+              revisionStatus: "Due Today ⚠️",
+              topicScores: { arrays: 90, recursion: 72, dp: 65, graphs: 48, oops: 78 },
+              weeklyProgress: [40, 50, 58, 65, 72, 80, 85],
+              streakDays: 7,
+              accuracy: 76
             },
             {
               studentName: "Kritika Verma",
@@ -154,7 +162,11 @@ export default function TeacherDashboard() {
               status: "Active & Excelling 🚀",
               strongTopic: "Object Oriented Programming",
               weakTopic: "Bit Manipulation",
-              revisionStatus: "Completed ✅"
+              revisionStatus: "Completed ✅",
+              topicScores: { arrays: 85, recursion: 80, dp: 74, graphs: 78, oops: 95 },
+              weeklyProgress: [55, 63, 70, 78, 84, 89, 92],
+              streakDays: 15,
+              accuracy: 91
             }
           ]);
         }

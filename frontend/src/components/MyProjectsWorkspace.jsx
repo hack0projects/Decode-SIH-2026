@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import MonacoEditor, { loader } from '@monaco-editor/react';
+
+// Use local monaco files (served by Vite) instead of CDN
+loader.config({ paths: { vs: '/node_modules/monaco-editor/min/vs' } });
 import { 
   Play, 
   Square, 
@@ -424,21 +428,31 @@ print("Final Total Sum:", total)
           {/* Editor Area */}
           <div style={{ position: 'relative', backgroundColor: editorMode === 'text' ? '#1E1E1E' : 'var(--bg-main)' }}>
             {editorMode === 'text' ? (
-              <textarea
+              <MonacoEditor
+                height="100%"
+                defaultLanguage="python"
+                language="python"
                 value={codeContent}
-                onChange={(e) => setCodeContent(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: '#1E1E1E',
-                  color: '#D4D4D4',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '14px',
-                  lineHeight: '1.6',
-                  padding: '20px',
-                  border: 'none',
-                  outline: 'none',
-                  resize: 'none'
+                onChange={(val) => setCodeContent(val || '')}
+                theme="vs-dark"
+                options={{
+                  fontSize: 14,
+                  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+                  fontLigatures: true,
+                  lineHeight: 22,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  tabSize: 4,
+                  insertSpaces: true,
+                  wordWrap: 'on',
+                  renderWhitespace: 'selection',
+                  smoothScrolling: true,
+                  cursorBlinking: 'smooth',
+                  cursorSmoothCaretAnimation: 'on',
+                  bracketPairColorization: { enabled: true },
+                  guides: { bracketPairs: true },
+                  padding: { top: 16, bottom: 16 }
                 }}
               />
             ) : (
