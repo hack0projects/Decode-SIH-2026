@@ -39,7 +39,7 @@ app.get('/test-db', async (req, res) => {
 });
 
 app.post('/run-code', async (req, res) => {
-  const { code, language, studentName } = req.body;
+  const { code, language, studentName, topic } = req.body;
 
   try {
     const response = await axios.post('https://api.jdoodle.com/v1/execute', {
@@ -54,8 +54,8 @@ app.post('/run-code', async (req, res) => {
     const hasError = output.toLowerCase().includes('error') || output.toLowerCase().includes('traceback');
 
     await pool.query(
-      'INSERT INTO attempts (student_name, code, language, success, error_message) VALUES ($1, $2, $3, $4, $5)',
-      [studentName || 'Unknown', code, language, !hasError, hasError ? output : null]
+      'INSERT INTO attempts (student_name, code, language, success, error_message, topic) VALUES ($1, $2, $3, $4, $5, $6)',
+      [studentName || 'Unknown', code, language, !hasError, hasError ? output : null, topic || 'General']
     );
 
     res.json({
@@ -73,7 +73,6 @@ app.post('/run-code', async (req, res) => {
   }
 });
 
-// UPDATED ROUTE - ab Krishna ka real Dify API use ho raha hai (fake response hata diya)
 app.post('/ask-tutor', async (req, res) => {
   const { question, studentName, language } = req.body;
 
@@ -117,32 +116,29 @@ app.post('/ask-tutor', async (req, res) => {
   }
 });
 
-// UPDATED ROUTE - ab Anshita ka Gemini API use ho raha hai translation ke liye
 app.post('/translate', async (req, res) => {
   const { text, targetLanguage, studentName } = req.body;
 
   try {
     const translatePrompt = `Translate the following text into ${targetLanguage}. Only return the translated text, nothing else:\n\n${text}`;
 
-    const geminiResponse = await axios.post(
-      `${process.env.TRANSLATE_API_URL}?key=${process.env.TRANSLATE_API_KEY}`,
+    const groqResponse = await axios.post(
+      process.env.TRANSLATE_API_URL,
       {
-        contents: [
-          {
-            parts: [
-              { text: translatePrompt }
-            ]
-          }
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'user', content: translatePrompt }
         ]
       },
       {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.TRANSLATE_API_KEY}`
         }
       }
     );
 
-    const translatedText = geminiResponse.data.candidates[0].content.parts[0].text;
+    const translatedText = groqResponse.data.choices[0].message.content;
 
     res.json({
       translatedText: translatedText,
@@ -158,7 +154,6 @@ app.post('/translate', async (req, res) => {
   }
 });
 
-// NAYA ROUTE - student ke attempts ka summary (Teacher Dashboard ke liye)
 app.get('/progress/:studentName', async (req, res) => {
   const { studentName } = req.params;
 
@@ -203,7 +198,74 @@ app.get('/progress/:studentName', async (req, res) => {
   }
 });
 
-// NAYA ROUTE - Teacher Dashboard ke liye poori class ka overview ek saath
+// NAYA ROUTE - Member 5 ke liye exact parameters (score, solvedProblems, status, strongTopic, weakTopic, revisionStatus)
+app.get('/student-profile/:studentName', async (req, res) => {
+  const { studentName } = req.params;
+
+  try {
+    const totalResult = await pool.query(
+      'SELECT COUNT(*) FROM attempts WHERE student_name = $1',
+      [studentName]
+    );
+
+    const successResult = await pool.query(
+      'SELECT COUNT(*) FROM attempts WHERE student_name = $1 AND success = true',
+      [studentName]
+    );
+
+    const topicResult = await pool.query(
+      `SELECT topic, COUNT(*) as total, SUM(CASE WHEN success THEN 1 ELSE 0 END) as passed
+       FROM attempts
+       WHERE student_name = $1 AND topic IS NOT NULL
+       GROUP BY topic
+       ORDER BY total DESC`,
+      [studentName]
+    );
+
+    const totalAttempts = parseInt(totalResult.rows[0].count);
+    const successfulAttempts = parseInt(successResult.rows[0].count);
+
+    const score = totalAttempts > 0 ? Math.round((successfulAttempts / totalAttempts) * 100) : 0;
+
+    let status = "Getting Started";
+    if (score >= 80) status = "Active & Excelling";
+    else if (score >= 50) status = "Active & Improving";
+    else if (totalAttempts > 0) status = "Needs Support";
+
+    let strongTopic = "N/A";
+    let weakTopic = "N/A";
+    if (topicResult.rows.length > 0) {
+      const sorted = topicResult.rows.map(row => ({
+        topic: row.topic,
+        rate: row.total > 0 ? (row.passed / row.total) : 0
+      })).sort((a, b) => b.rate - a.rate);
+
+      strongTopic = sorted[0]?.topic || "N/A";
+      weakTopic = sorted[sorted.length - 1]?.topic || "N/A";
+    }
+
+    const revisionStatus = score < 50 ? "Needs Revision" : "On Track";
+
+    res.json({
+      studentName: studentName,
+      score: score,
+      solvedProblems: successfulAttempts,
+      status: status,
+      strongTopic: strongTopic,
+      weakTopic: weakTopic,
+      revisionStatus: revisionStatus,
+      success: true
+    });
+
+  } catch (error) {
+    console.error('Student profile error:', error.message);
+    res.status(500).json({
+      error: "Profile data nahi mil paya",
+      success: false
+    });
+  }
+});
+
 app.get('/progress-overview', async (req, res) => {
   try {
     const summaryResult = await pool.query(`
@@ -216,7 +278,6 @@ app.get('/progress-overview', async (req, res) => {
       ORDER BY student_name
     `);
 
-    // Weak topics - jis language/topic mein sabse zyada fail hue, wahi "weak" maana
     const weakTopicsResult = await pool.query(`
       SELECT student_name, language, COUNT(*) as fail_count
       FROM attempts

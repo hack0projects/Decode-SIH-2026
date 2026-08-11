@@ -13,6 +13,8 @@ export default function App() {
   const [islMode, setIslMode] = useState(true);
   const [currentLang, setCurrentLang] = useState('hi');
   const [userRole, setUserRole] = useState('student');
+  const [userName, setUserName] = useState(localStorage.getItem('codeseekho_username') || '');
+
   const [selectedProject, setSelectedProject] = useState({
     id: 'calculator',
     title: 'Smart Calculator',
@@ -32,41 +34,62 @@ print("Final Total Sum:", total)
 `
   });
 
+  const handleSetTab = (tab) => {
+    const activeUser = userName || localStorage.getItem('codeseekho_username');
+    // Silently block tab navigation if not logged in
+    if (!activeUser && tab !== 'landing') {
+      return;
+    }
+    // Silently block students from teacher portal
+    if (tab === 'teacher' && userRole !== 'teacher') {
+      return;
+    }
+    setCurrentTab(tab);
+  };
+
   return (
     <div className="app-container">
       {/* Top Header */}
       <Navbar
         currentTab={currentTab}
-        setCurrentTab={setCurrentTab}
+        setCurrentTab={handleSetTab}
         islMode={islMode}
         setIslMode={setIslMode}
         currentLang={currentLang}
         setCurrentLang={setCurrentLang}
         userRole={userRole}
         setUserRole={setUserRole}
+        userName={userName}
+        setUserName={setUserName}
       />
 
       {/* Main Content Body */}
       <main className="main-content">
         {currentTab === 'landing' && (
           <LandingPage
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={handleSetTab}
             islMode={islMode}
             setIslMode={setIslMode}
+            setUserRole={setUserRole}
+            setUserName={(name) => {
+              setUserName(name);
+              localStorage.setItem('codeseekho_username', name);
+            }}
           />
         )}
 
         {currentTab === 'home' && (
           <HomeDashboard
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={handleSetTab}
             islMode={islMode}
             currentLang={currentLang}
+            userName={userName}
           />
         )}
 
         {currentTab === 'projects' && (
           <ProjectsPage
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={handleSetTab}
             setSelectedProject={setSelectedProject}
           />
         )}
@@ -76,6 +99,7 @@ print("Final Total Sum:", total)
             selectedProject={selectedProject}
             islMode={islMode}
             currentLang={currentLang}
+            userName={userName}
           />
         )}
 
@@ -83,12 +107,13 @@ print("Final Total Sum:", total)
           <AIMentorPage
             currentLang={currentLang}
             islMode={islMode}
+            userName={userName}
           />
         )}
 
         {currentTab === 'ncert' && (
           <NCERTSection
-            setCurrentTab={setCurrentTab}
+            setCurrentTab={handleSetTab}
             setSelectedProject={setSelectedProject}
           />
         )}
@@ -115,8 +140,6 @@ print("Final Total Sum:", total)
             <span>NCERT CS Curriculum Aligned</span>
             <span>•</span>
             <span>Indian Sign Language (ISL) Engine</span>
-            <span>•</span>
-            <span>Member 3 Frontend Deliverable</span>
           </div>
         </div>
       </footer>
