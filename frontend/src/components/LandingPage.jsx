@@ -10,18 +10,75 @@ import {
   BookOpen, 
   Layers,
   Play,
-  ShieldCheck
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
+import { authService } from '../services/supabaseClient';
 
-export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
+export default function LandingPage({ setCurrentTab, setIslMode, islMode, setUserRole, setUserName }) {
   const [activeRoleTab, setActiveRoleTab] = useState('student');
   const [email, setEmail] = useState('student@school.edu.in');
-  const [password, setPassword] = useState('••••••••');
+  const [password, setPassword] = useState('password123');
+  const [fullName, setFullName] = useState('');
   const [localIsl, setLocalIsl] = useState(islMode);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+    setLoading(true);
     setIslMode(localIsl);
+
+    try {
+      let sessionData;
+      if (isSignUp) {
+        if (!fullName.trim()) {
+          throw new Error('Please enter your full name.');
+        }
+        sessionData = await authService.signUp(email, password, activeRoleTab, fullName);
+        setSuccessMessage('Account created successfully! Logging you in...');
+      } else {
+        sessionData = await authService.signIn(email, password);
+        setSuccessMessage('Welcome back! Logging you in...');
+      }
+
+      const user = sessionData?.user;
+      const finalName = user?.fullName || user?.user_metadata?.full_name || email.split('@')[0];
+
+      if (setUserName) {
+        setUserName(finalName);
+      }
+      if (setUserRole) {
+        setUserRole(activeRoleTab);
+      }
+
+      setTimeout(() => {
+        if (activeRoleTab === 'student') {
+          setCurrentTab('home');
+        } else {
+          setCurrentTab('teacher');
+        }
+      }, 1000);
+    } catch (err) {
+      setErrorMessage(err.message || 'An error occurred during authentication.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = () => {
+    setIslMode(localIsl);
+    const guestNameInput = fullName.trim() || 'Guest Judge';
+    if (setUserName) {
+      setUserName(guestNameInput);
+    }
+    if (setUserRole) {
+      setUserRole(activeRoleTab);
+    }
     if (activeRoleTab === 'student') {
       setCurrentTab('home');
     } else {
@@ -97,17 +154,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 1 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <Languages size={20} />
+                <Languages size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Your language, not just English
@@ -120,17 +179,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 2 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <Hand size={20} />
+                <Hand size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Indian Sign Language built in
@@ -143,17 +204,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 3 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <Code2 size={20} />
+                <Code2 size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Real languages, real projects
@@ -166,17 +229,19 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             {/* Card 4 */}
             <div className="card" style={{ padding: '20px' }}>
               <div style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justify: 'center',
                 color: 'var(--accent)',
-                marginBottom: '12px'
+                marginBottom: '14px',
+                flexShrink: 0
               }}>
-                <GraduationCap size={20} />
+                <GraduationCap size={20} style={{ display: 'block' }} />
               </div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
                 Classroom ready
@@ -190,7 +255,11 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
           {/* Quick CTA button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button 
-              onClick={() => setCurrentTab('home')}
+              onClick={() => {
+                if (setUserName) setUserName('Guest Judge');
+                if (setUserRole) setUserRole('student');
+                setCurrentTab('home');
+              }}
               className="btn-primary" 
               style={{ padding: '14px 28px', fontSize: '16px' }}
             >
@@ -199,7 +268,11 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             </button>
 
             <button 
-              onClick={() => setCurrentTab('my-workspace')}
+              onClick={() => {
+                if (setUserName) setUserName('Guest Judge');
+                if (setUserRole) setUserRole('student');
+                setCurrentTab('my-workspace');
+              }}
               className="btn-secondary"
               style={{ padding: '14px 24px', fontSize: '15px' }}
             >
@@ -258,13 +331,60 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
           </div>
 
           <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '6px' }}>
-            Welcome back
+            {isSignUp ? 'Create account' : 'Welcome back'}
           </h2>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>
-            Pick up where you left off in your coding project.
+            {isSignUp 
+              ? 'Join CodeSeekho AI and begin your coding journey.' 
+              : 'Pick up where you left off in your coding project.'}
           </p>
 
+          {errorMessage && (
+            <div style={{
+              backgroundColor: '#FEE2E2',
+              color: '#991B1B',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '13px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              border: '1px solid #FCA5A5'
+            }}>
+              ⚠️ {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div style={{
+              backgroundColor: '#DEF7EC',
+              color: '#03543F',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '13px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              border: '1px solid #84E1BC'
+            }}>
+              ✅ {successMessage}
+            </div>
+          )}
+
           <form onSubmit={handleLoginSubmit}>
+            {/* Unified name input: acts as Full Name for signup and Guest Name for login/guest */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
+                {isSignUp ? 'Full Name' : 'Full Name / Guest Name (Optional for Guest)'}
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Aarav Sharma"
+                required={isSignUp}
+              />
+            </div>
+
             <div style={{ marginBottom: '18px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-main)' }}>
                 Email address
@@ -275,6 +395,7 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@school.edu.in"
+                required
               />
             </div>
 
@@ -288,6 +409,7 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                required
               />
             </div>
 
@@ -319,11 +441,38 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             <button
               type="submit"
               className="btn-primary"
-              style={{ width: '100%', padding: '12px', fontSize: '15px' }}
+              disabled={loading}
+              style={{ width: '100%', padding: '12px', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              Log in as {activeRoleTab === 'student' ? 'student' : 'teacher'}
+              {loading && <span className="spinner" style={{ width: '14px', height: '14px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />}
+              <span>{isSignUp ? 'Sign up' : 'Log in'} as {activeRoleTab === 'student' ? 'student' : 'teacher'}</span>
             </button>
           </form>
+
+          {/* Continue as Guest Button (Highlighted for Judges) */}
+          <div style={{ marginTop: '12px' }}>
+            <button
+              onClick={handleGuestLogin}
+              className="btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '15px',
+                backgroundColor: '#10B981',
+                borderColor: '#059669',
+                color: '#FFFFFF',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)'
+              }}
+            >
+              <UserCheck size={18} />
+              <span>Continue as Guest (Judge Entry)</span>
+            </button>
+          </div>
 
           <div style={{
             display: 'flex',
@@ -339,10 +488,7 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
           </div>
 
           <button
-            onClick={() => {
-              setIslMode(localIsl);
-              setCurrentTab('home');
-            }}
+            onClick={handleGuestLogin}
             className="btn-secondary"
             style={{ width: '100%', padding: '10px', fontSize: '14px' }}
           >
@@ -355,7 +501,17 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode }) {
             fontSize: '13px',
             color: 'var(--text-muted)'
           }}>
-            New here? <span style={{ color: 'var(--accent)', fontWeight: '700', cursor: 'pointer' }}>Create an account</span>
+            {isSignUp ? 'Already have an account? ' : 'New here? '}
+            <span 
+              onClick={() => {
+                setErrorMessage('');
+                setSuccessMessage('');
+                setIsSignUp(!isSignUp);
+              }}
+              style={{ color: 'var(--accent)', fontWeight: '700', cursor: 'pointer' }}
+            >
+              {isSignUp ? 'Log in' : 'Create an account'}
+            </span>
           </div>
         </div>
       </div>

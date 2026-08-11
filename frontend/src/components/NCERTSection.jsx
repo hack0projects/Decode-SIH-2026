@@ -1,233 +1,742 @@
-import React, { useState } from 'react';
-import { 
-  BookOpen, 
-  Hand, 
-  Download, 
-  Play, 
-  CheckCircle2, 
-  FileText, 
-  HelpCircle,
-  Sparkles,
-  Layers
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  BookOpen, Hand, Download, Play, CheckCircle2, HelpCircle, Sparkles,
+  ChevronRight, ChevronDown, Atom, Beaker, Dna, Binary, Calculator,
+  BrainCircuit, Volume2, Globe, MessageSquare, Send, Lightbulb,
+  Eye, Headphones, Video, CheckCheck, Lock, Star
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import ISLVideoPlayerModal from './ISLVideoPlayerModal';
+import { askTutor, translateText, askNcertTutor } from '../services/api';
+import { NCERT_CHAPTERS, STEM_MOCK_DATA, HINTS } from './ncertData';
 
+// Helper to render subject icons dynamically
+const getSubjectIcon = (subject, size = 15) => {
+  switch (subject) {
+    case 'cs': return <Binary size={size} />;
+    case 'maths': return <Calculator size={size} />;
+    case 'science': return <Atom size={size} />;
+    case 'english': return <BookOpen size={size} />;
+    default: return <BookOpen size={size} />;
+  }
+};
+
+// Helper to map language codes to locale codes for Speech Synthesis
+const getLocaleCode = (shortCode) => {
+  const localeMap = {
+    hi: 'hi-IN',
+    en: 'en-IN',
+    ta: 'ta-IN',
+    te: 'te-IN',
+    kn: 'kn-IN',
+    mr: 'mr-IN',
+    bn: 'bn-IN',
+    gu: 'gu-IN'
+  };
+  return localeMap[shortCode] || 'en-IN';
+};
+
+const LANG_OPTIONS = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'हिंदी' },
+  { code: 'ta', label: 'தமிழ்' },
+  { code: 'te', label: 'తెలుగు' },
+  { code: 'kn', label: 'ಕನ್ನಡ' },
+  { code: 'mr', label: 'मराठी' },
+  { code: 'bn', label: 'বাংলা' },
+  { code: 'gu', label: 'ગુજરાતી' },
+];
+
+// ─────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────
 export default function NCERTSection({ setCurrentTab, setSelectedProject }) {
   const [selectedGrade, setSelectedGrade] = useState('8');
+  const [selectedStem, setSelectedStem] = useState('cs');
+  const [selectedChap, setSelectedChap] = useState(null);
+
+  const [chatLang, setChatLang] = useState('en');
+  const [completedChapters, setCompletedChapters] = useState(() => {
+    const saved = localStorage.getItem('cs_completed');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // ISL Modal
   const [isIslModalOpen, setIsIslModalOpen] = useState(false);
   const [activeConcept, setActiveConcept] = useState('');
 
-  const ncertChapters = [
-    {
-      id: 'ch1',
-      number: 'Chapter 1',
-      title: 'Introduction to Python & Algorithmic Thinking',
-      grade: '8',
-      description: 'Understanding step-by-step algorithms, flowchart logic, and writing your very first print statement in Python.',
-      topics: ['Algorithm vs Program', 'Python Interpreter', 'print() and input()'],
-      islAvailable: true,
-      pdfSize: '1.2 MB'
-    },
-    {
-      id: 'ch2',
-      number: 'Chapter 2',
-      title: 'Variables, Data Types & Arithmetic Operators',
-      grade: '8',
-      description: 'Storing data in computer memory variables (Integers, Floats, Strings, Booleans) and performing arithmetic.',
-      topics: ['Variables & Memory', 'Data Types (int, str, float)', 'Operators (+, -, *, /)'],
-      islAvailable: true,
-      pdfSize: '1.8 MB'
-    },
-    {
-      id: 'ch3',
-      number: 'Chapter 3',
-      title: 'Control Flow: Conditionals & Loops',
-      grade: '8',
-      description: 'Making decisions with if-elif-else branches and repeating tasks efficiently using while loops and for loops.',
-      topics: ['if-else Branching', 'while Loops', 'for Loop Iteration'],
-      islAvailable: true,
-      pdfSize: '2.4 MB'
-    },
-    {
-      id: 'ch4',
-      number: 'Chapter 4',
-      title: 'Functions & Modular Code Design',
-      grade: '9',
-      description: 'Breaking large programs into reusable functions with parameters and return values.',
-      topics: ['def Keyword', 'Function Arguments', 'Return Values'],
-      islAvailable: true,
-      pdfSize: '2.1 MB'
-    },
-    {
-      id: 'ch5',
-      number: 'Chapter 5',
-      title: 'Data Structures: Lists & Dictionaries',
-      grade: '10',
-      description: 'Organizing complex datasets using ordered list arrays and key-value pair dictionaries.',
-      topics: ['List Indexing', 'Dictionary Keys', 'Iterating Datasets'],
-      islAvailable: true,
-      pdfSize: '3.0 MB'
+  // Socratic hint state
+  const [hintIndex, setHintIndex] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+
+  // STEM summary state
+  const [stemSummary, setStemSummary] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
+  // Chatbot state
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'ai', text: '🙏 Namaste! I am your CodeSeekho STEM AI Mentor. Select a chapter or STEM branch above, then ask me anything — I will guide you Socratically!' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  const [isPlayingSpeech, setIsPlayingSpeech] = useState(false);
+  const [isPausedSpeech, setIsPausedSpeech] = useState(false);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  // Cancel speech on chapter, grade, or subject switch
+  useEffect(() => {
+    const synth = window.speechSynthesis;
+    if (synth) {
+      synth.cancel();
     }
-  ];
+    setIsPlayingSpeech(false);
+    setIsPausedSpeech(false);
+  }, [selectedChap, selectedGrade, selectedStem]);
 
-  const filteredChapters = ncertChapters.filter(c => c.grade === selectedGrade || selectedGrade === 'all');
+  // Auto-switch subject when selected grade doesn't support the current subject
+  useEffect(() => {
+    if (selectedGrade !== 'all') {
+      const hasChapters = NCERT_CHAPTERS.some(c => c.grade === selectedGrade && c.subject === selectedStem);
+      if (!hasChapters) {
+        const availableChap = NCERT_CHAPTERS.find(c => c.grade === selectedGrade);
+        if (availableChap) {
+          setSelectedStem(availableChap.subject);
+        }
+      }
+    }
+  }, [selectedGrade]);
 
-  const handleDownloadNcertNotes = (chap) => {
-    const doc = new jsPDF();
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.setTextColor(200, 75, 36);
-    doc.text(`NCERT Class ${chap.grade} CS — ${chap.number}`, 20, 20);
+  const filteredChapters = NCERT_CHAPTERS.filter(c =>
+    (c.grade === selectedGrade || selectedGrade === 'all') && c.subject === selectedStem
+  );
 
-    doc.setFontSize(14);
-    doc.setTextColor(30, 30, 30);
-    doc.text(chap.title, 20, 30);
+  const stemInfo = STEM_MOCK_DATA[selectedStem] || { name: '', color: '#000', bgColor: '#fff', grades: {} };
+  const gradeData = stemInfo?.grades?.[selectedGrade];
 
-    doc.setLineWidth(0.5);
-    doc.line(20, 36, 190, 36);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Summary: ${chap.description}`, 20, 48);
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Key Topics Covered in Syllabus:', 20, 62);
-
-    let y = 72;
-    doc.setFont('helvetica', 'normal');
-    chap.topics.forEach(t => {
-      doc.text(`• ${t}`, 25, y);
-      y += 8;
-    });
-
-    doc.save(`NCERT_Class${chap.grade}_CS_${chap.number.replace(' ', '_')}.pdf`);
+  // ── Mark chapter complete ──
+  const markComplete = (chapId) => {
+    const updated = completedChapters.includes(chapId)
+      ? completedChapters.filter(id => id !== chapId)
+      : [...completedChapters, chapId];
+    setCompletedChapters(updated);
+    localStorage.setItem('cs_completed', JSON.stringify(updated));
   };
 
-  const handlePlayIsl = (concept) => {
+  // ── PDF download ──
+  const handleDownloadPdf = (chap) => {
+    const doc = new jsPDF();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(200, 75, 36);
+    doc.text(`NCERT Class ${chap.grade} — ${chap.number}`, 20, 20);
+    doc.setFontSize(13);
+    doc.setTextColor(30, 30, 30);
+    doc.text(chap.title, 20, 30);
+    doc.setLineWidth(0.4);
+    doc.line(20, 35, 190, 35);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(`Summary: ${chap.description}`, 20, 45, { maxWidth: 170 });
+    doc.setFont('helvetica', 'bold');
+    doc.text('Key Topics:', 20, 62);
+    doc.setFont('helvetica', 'normal');
+    let y = 70;
+    chap.topics.forEach(t => { doc.text(`  • ${t}`, 20, y); y += 7; });
+    doc.setFont('helvetica', 'bold');
+    doc.text('Real-World Analogy:', 20, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(chap.analogy, 20, y + 13, { maxWidth: 170 });
+    doc.save(`NCERT_Class${chap.grade}_${chap.number.replace(' ', '_')}.pdf`);
+  };
+
+  // ── STEM AI Summary ──
+  const generateStemSummary = async () => {
+    if (!gradeData) return;
+    setIsSummarizing(true);
+    setStemSummary('');
+    const prompt = `You are a Socratic AI tutor. Summarize in 3 short paragraphs (simple, engaging, Class ${selectedGrade} level) the topic: "${stemInfo.name} for Class ${selectedGrade}". Overview: ${gradeData.overview}. Include these key points: ${gradeData.keyPoints.join(', ')}. End with one real-world connection.`;
+    try {
+      const res = await askTutor(prompt, 'Student');
+      setStemSummary(res?.answer || res?.reply || res?.response || gradeData.overview);
+    } catch {
+      setStemSummary(gradeData.overview + '\n\n📌 Key Points:\n• ' + gradeData.keyPoints.join('\n• ') + '\n\n🌍 Real World: ' + gradeData.realWorld);
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  // ── Chatbot send ──
+  const handleSendChat = async (e) => {
+    e?.preventDefault();
+    const msg = chatInput.trim();
+    if (!msg) return;
+    setChatInput('');
+    setIsChatLoading(true);
+    setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
+
+    const context = selectedChap
+      ? `The student is studying: ${selectedChap.title} (Class ${selectedChap.grade} ${stemInfo?.name}). `
+      : selectedStem
+        ? `The student is interested in: ${stemInfo?.name} for Class ${selectedGrade}. `
+        : '';
+
+    const prompt = `${context}Student asks: "${msg}". Respond in a Socratic way — guide with questions and hints rather than giving direct answers. Keep it simple for Class 8-12.`;
+    try {
+      const res = await askNcertTutor(msg, context || `NCERT Class ${selectedGrade} ${stemInfo?.name}`, 'Student');
+      let reply = res?.answer || res?.reply || res?.response || '';
+      if (!reply) reply = `Great question! 🤔 Think about: what do you already know about ${selectedChap?.title || stemInfo?.name || 'this topic'}? Let's break it down step by step.`;
+
+      if (chatLang !== 'en' && reply) {
+        try {
+          const trans = await translateText(reply, chatLang, 'Student');
+          reply = trans?.translatedText || reply;
+        } catch { /* use English fallback */ }
+      }
+      setChatMessages(prev => [...prev, { role: 'ai', text: reply }]);
+    } catch (err) {
+      const fallback = `Great question! Let me help you think through it. What do you already know about ${selectedChap?.title || stemInfo?.name || 'this'}? Can you relate it to something from daily life?`;
+      setChatMessages(prev => [...prev, { role: 'ai', text: fallback }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  // ── Global Speech playback (with Play/Pause/Resume functionality) ──
+  const handleGlobalSpeakToggle = () => {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      alert("Text-to-speech is not supported in this browser.");
+      return;
+    }
+
+    if (isPlayingSpeech) {
+      if (isPausedSpeech) {
+        synth.resume();
+        setIsPausedSpeech(false);
+      } else {
+        synth.pause();
+        setIsPausedSpeech(true);
+      }
+    } else {
+      synth.cancel();
+      let textToRead = '';
+      if (selectedChap) {
+        textToRead = `${selectedChap.title}. Summary: ${selectedChap.description}. Analogy: ${selectedChap.analogy}. Common pitfall: ${selectedChap.pitfalls}. Challenge: ${selectedChap.challenge}`;
+      } else if (gradeData) {
+        textToRead = `${stemInfo.name} for Class ${selectedGrade === 'all' ? '8 to 12' : selectedGrade}. ${gradeData.overview}. Key points: ${gradeData.keyPoints.join('. ')}. Real world: ${gradeData.realWorld}`;
+      } else {
+        textToRead = `Please select a chapter or subject to listen to.`;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(textToRead);
+      utterance.lang = getLocaleCode(chatLang);
+      
+      utterance.onend = () => {
+        setIsPlayingSpeech(false);
+        setIsPausedSpeech(false);
+      };
+      
+      utterance.onerror = () => {
+        setIsPlayingSpeech(false);
+        setIsPausedSpeech(false);
+      };
+
+      setIsPlayingSpeech(true);
+      setIsPausedSpeech(false);
+      synth.speak(utterance);
+    }
+  };
+
+  // ── Global ISL trigger ──
+  const handleGlobalIslTrigger = () => {
+    const concept = selectedChap ? selectedChap.title : `${stemInfo.name} Class ${selectedGrade}`;
     setActiveConcept(concept);
     setIsIslModalOpen(true);
   };
 
+  // ── NotebookLM-style source summarization chatbot trigger ──
+  const handleSummarizeSourceChat = async () => {
+    setIsChatLoading(true);
+    const sourceTitle = selectedChap ? selectedChap.title : `${stemInfo?.name} Class ${selectedGrade}`;
+    const sourceContext = selectedChap
+      ? `Chapter: ${selectedChap.title}. Description: ${selectedChap.description}. Analogy: ${selectedChap.analogy}. Key Topics: ${selectedChap.topics.join(', ')}.`
+      : `${stemInfo?.name} for Class ${selectedGrade}. Overview: ${gradeData?.overview}. Key Points: ${gradeData?.keyPoints?.join(', ')}.`;
+
+    setChatMessages(prev => [...prev, { role: 'user', text: `✨ Summarize the source: ${sourceTitle}` }]);
+
+    const prompt = `You are a Socratic AI Mentor. Provide a structured, engaging, and easy-to-understand summary of this source content for a student:
+${sourceContext}
+Use simple language, bold key terms, and end with a quick quiz question to check understanding.`;
+
+    try {
+      const res = await askNcertTutor(prompt, `Source: ${sourceTitle}`, 'Student');
+      let reply = res?.answer || res?.reply || res?.response || '';
+      if (!reply) reply = `Here is a quick summary of **${sourceTitle}**: It covers key concepts including ${selectedChap ? selectedChap.topics.join(', ') : gradeData?.keyPoints?.join(', ')}. Try to relate it to daily life!`;
+
+      if (chatLang !== 'en' && reply) {
+        try {
+          const trans = await translateText(reply, chatLang, 'Student');
+          reply = trans?.translatedText || reply;
+        } catch { /* use English fallback */ }
+      }
+      setChatMessages(prev => [...prev, { role: 'ai', text: reply }]);
+    } catch (err) {
+      const fallback = `Here is the summary of **${sourceTitle}**: It is focused on building foundational understanding. What specific part would you like to discuss?`;
+      setChatMessages(prev => [...prev, { role: 'ai', text: fallback }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  // ── Get Hint ──
+  const getNextHint = () => {
+    const hints = HINTS[selectedStem] || HINTS.cs;
+    setShowHint(true);
+    setHintIndex(prev => (prev + 1) % hints.length);
+  };
+
+  // ─────── RENDER ───────
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px 80px' }}>
-      
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <div className="pill-badge" style={{ marginBottom: '10px' }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px 24px 80px' }}>
+
+      {/* ── Header ── */}
+      <div style={{ marginBottom: '24px' }}>
+        <div className="pill-badge" style={{ marginBottom: '8px' }}>
           <BookOpen size={14} />
-          <span>Official RAG Grounded Curriculum</span>
+          <span>RAG-Grounded NCERT Curriculum · Classes 8–12</span>
         </div>
-        <h1 style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px' }}>
-          NCERT & State Board CS Syllabus
+        <h1 style={{ fontSize: '30px', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>
+          STEM AI Learning Lab
         </h1>
-        <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginTop: '4px' }}>
-          All AI explanations, regional language translations, and ISL video clips are strictly grounded in official Indian school Computer Science textbooks.
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          Select a STEM branch · Choose your grade · Read, summarize, and chat with AI Mentor
         </p>
       </div>
 
-      {/* Grade Selector Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '32px',
-        backgroundColor: 'var(--bg-card)',
-        padding: '6px',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-light)',
-        width: 'fit-content'
-      }}>
-        {['8', '9', '10', 'all'].map((grade) => (
-          <button
-            key={grade}
-            onClick={() => setSelectedGrade(grade)}
+      {/* ── Top Controls Row: Grade + STEM branch tabs + Mode switcher ── */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+
+        {/* Grade tabs */}
+        <div style={{
+          display: 'flex', gap: '4px',
+          backgroundColor: 'var(--bg-card)', padding: '4px',
+          borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)'
+        }}>
+          {['8', '9', '10', '11', '12', 'all'].map(g => (
+            <button key={g} onClick={() => { setSelectedGrade(g); setSelectedChap(null); setStemSummary(''); }}
+              style={{
+                padding: '6px 14px', borderRadius: 'var(--radius-sm)',
+                fontSize: '12px', fontWeight: '700',
+                backgroundColor: selectedGrade === g ? 'var(--accent)' : 'transparent',
+                color: selectedGrade === g ? '#fff' : 'var(--text-muted)',
+                transition: 'all 0.15s'
+              }}>
+              {g === 'all' ? 'All' : `Cl ${g}`}
+            </button>
+          ))}
+        </div>
+
+        {/* STEM branch pills */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {Object.entries(STEM_MOCK_DATA).map(([key, branch]) => {
+            const isSelected = selectedStem === key;
+            return (
+              <button key={key}
+                onClick={() => { setSelectedStem(key); setSelectedChap(null); setStemSummary(''); setHintIndex(0); setShowHint(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: branch.highlight ? '6px 14px' : '5px 12px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '12px', fontWeight: isSelected ? '800' : '600',
+                  backgroundColor: isSelected ? branch.color : (branch.highlight ? 'rgba(235,94,40,0.07)' : 'var(--bg-card)'),
+                  color: isSelected ? '#fff' : branch.color,
+                  border: branch.highlight
+                    ? `${isSelected ? '2px solid' : '1.5px dashed'} ${branch.color}`
+                    : `1px solid ${isSelected ? branch.color : 'var(--border-light)'}`,
+                  transition: 'all 0.2s',
+                  boxShadow: branch.highlight ? '0 2px 8px rgba(235,94,40,0.15)' : 'none'
+                }}>
+                {getSubjectIcon(key)}
+                <span>{branch.name}</span>
+                {branch.highlight && <span style={{
+                  fontSize: '8px', backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : branch.color,
+                  color: '#fff', padding: '1px 5px', borderRadius: 'var(--radius-full)', fontWeight: '900'
+                }}>CORE</span>}
+              </button>
+            );
+          })}
+
+          <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-medium)', margin: '0 6px' }} />
+
+          {/* Audio Reader button */}
+          <button onClick={handleGlobalSpeakToggle}
             style={{
-              padding: '8px 18px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '13px',
-              fontWeight: '700',
-              backgroundColor: selectedGrade === grade ? 'var(--accent)' : 'transparent',
-              color: selectedGrade === grade ? '#FFFFFF' : 'var(--text-muted)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {grade === 'all' ? 'All Grades' : `Class ${grade}`}
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '6px 12px', borderRadius: 'var(--radius-full)',
+              fontSize: '12px', fontWeight: '700',
+              backgroundColor: isPlayingSpeech ? (isPausedSpeech ? '#FEF3C7' : '#DCFCE7') : 'var(--bg-card)',
+              color: isPlayingSpeech ? (isPausedSpeech ? '#92400E' : '#15803D') : 'var(--text-muted)',
+              border: `1px solid ${isPlayingSpeech ? (isPausedSpeech ? '#FCD34D' : '#86EFAC') : 'var(--border-medium)'}`,
+              transition: 'all 0.2s',
+              cursor: 'pointer'
+            }}>
+            <Volume2 size={13} style={{ animation: isPlayingSpeech && !isPausedSpeech ? 'pulse 1.5s infinite' : 'none' }} />
+            <span>{isPlayingSpeech ? (isPausedSpeech ? '▶ Resume' : '⏸ Pause') : '🔊 Listen'}</span>
           </button>
-        ))}
+
+          {/* ISL Guide button */}
+          <button onClick={handleGlobalIslTrigger}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '6px 12px', borderRadius: 'var(--radius-full)',
+              fontSize: '12px', fontWeight: '700',
+              backgroundColor: '#FEF3C7',
+              color: '#92400E',
+              border: '1px solid #FCD34D',
+              transition: 'all 0.2s',
+              cursor: 'pointer'
+            }}>
+            <Hand size={13} color="#D97706" />
+            <span>ISL Guide</span>
+          </button>
+        </div>
+
+
       </div>
 
-      {/* Chapters Grid */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {filteredChapters.map((chap) => (
-          <div key={chap.id} className="card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+      {/* ── UPPER SECTION: Chapters (left) + STEM Summary (right) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '24px', marginBottom: '28px', alignItems: 'start' }}>
+
+        {/* Chapter List */}
+        <div>
+          {/* STEM overview strip */}
+          {gradeData && (
+            <div style={{
+              backgroundColor: stemInfo.highlight ? 'var(--accent-light)' : stemInfo.bgColor,
+              border: `1px solid ${stemInfo.highlight ? 'var(--accent-border)' : stemInfo.color}30`,
+              borderRadius: 'var(--radius-md)', padding: '14px 18px', marginBottom: '16px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px'
+            }}>
               <div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--accent)' }}>
-                    {chap.number}
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>•</span>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                    Class {chap.grade} Computer Science
-                  </span>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: stemInfo.color, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                  {stemInfo.name} · Class {selectedGrade === 'all' ? '8–12' : selectedGrade} Overview
                 </div>
-                <h3 style={{ fontSize: '20px', fontWeight: '800' }}>
-                  {chap.title}
-                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
+                  {gradeData.overview}
+                </p>
               </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  onClick={() => handlePlayIsl(chap.title)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: '#FEF3C7',
-                    color: '#92400E',
-                    border: '1px solid #FCD34D',
-                    fontSize: '12px',
-                    fontWeight: '700'
-                  }}
-                >
-                  <Hand size={14} color="#D97706" />
-                  <span>ISL Video</span>
-                </button>
-
-                <button
-                  onClick={() => handleDownloadNcertNotes(chap)}
-                  className="btn-secondary"
-                  style={{ padding: '8px 12px', fontSize: '12px' }}
-                >
-                  <Download size={14} />
-                  <span>Download Notes PDF</span>
-                </button>
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', backgroundColor: stemInfo.color + '20', color: stemInfo.color }}>
+                {getSubjectIcon(selectedStem, 18)}
               </div>
             </div>
+          )}
 
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.5' }}>
-              {chap.description}
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-faint)' }}>Topics:</span>
-              {chap.topics.map((t, idx) => (
-                <span key={idx} style={{
-                  fontSize: '11px',
-                  backgroundColor: 'var(--bg-subtle)',
-                  padding: '3px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  color: 'var(--text-main)',
-                  border: '1px solid var(--border-light)'
+          {/* Chapter cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {filteredChapters.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-faint)', fontSize: '14px' }}>
+                📚 No chapters available for {stemInfo?.name} in Class {selectedGrade}.<br />
+                <span style={{ fontSize: '12px' }}>Try switching to Computer Science or All Grades.</span>
+              </div>
+            )}
+            {filteredChapters.map((chap) => {
+              const isDone = completedChapters.includes(chap.id);
+              const isOpen = selectedChap?.id === chap.id;
+              return (
+                <div key={chap.id} className="card" style={{
+                  padding: '0', overflow: 'hidden',
+                  border: isOpen ? '1.5px solid var(--accent)' : isDone ? '1px solid #86EFAC' : '1px solid var(--border-light)',
+                  boxShadow: isOpen ? '0 0 0 2px var(--accent-border)' : 'var(--shadow-sm)'
                 }}>
-                  {t}
-                </span>
-              ))}
+                  {/* Chapter header row */}
+                  <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    onClick={() => { setSelectedChap(isOpen ? null : chap); setHintIndex(0); setShowHint(false); }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      {/* Complete indicator */}
+                      <div onClick={(e) => { e.stopPropagation(); markComplete(chap.id); }}
+                        style={{
+                          width: '22px', height: '22px', borderRadius: '50%',
+                          border: isDone ? 'none' : '2px solid var(--border-medium)',
+                          backgroundColor: isDone ? '#22C55E' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0, cursor: 'pointer', transition: 'all 0.2s'
+                        }}>
+                        {isDone && <CheckCheck size={12} color="#fff" />}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent)' }}>{chap.number}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>Class {chap.grade}</span>
+                          {chap.islAvailable && <span style={{ fontSize: '9px', backgroundColor: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: 'var(--radius-full)', fontWeight: '700' }}>ISL ✓</span>}
+                        </div>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>{chap.title}</h3>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button onClick={(e) => { e.stopPropagation(); handleDownloadPdf(chap); }}
+                        style={{ padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: '600', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
+                        <Download size={11} /> PDF
+                      </button>
+                      {chap.islAvailable && (
+                        <button onClick={(e) => { e.stopPropagation(); setActiveConcept(chap.title); setIsIslModalOpen(true); }}
+                          style={{ padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: '600', backgroundColor: '#FEF3C7', border: '1px solid #FCD34D', display: 'flex', alignItems: 'center', gap: '4px', color: '#92400E' }}>
+                          <Hand size={11} color="#D97706" /> ISL
+                        </button>
+                      )}
+                      <div style={{ color: 'var(--text-faint)', transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'none' }}>
+                        <ChevronRight size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded: 5-layer reading view */}
+                  {isOpen && (
+                    <div style={{ borderTop: '1px solid var(--border-light)', padding: '20px' }}>
+                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: '1.6' }}>{chap.description}</p>
+
+                      {/* Topic pills */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '18px' }}>
+                        {chap.topics.map((t, i) => (
+                          <span key={i} style={{ fontSize: '11px', backgroundColor: 'var(--bg-subtle)', padding: '3px 10px', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-light)' }}>{t}</span>
+                        ))}
+                      </div>
+
+                      {/* 5-layer grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                        {[
+                          { label: '🎭 Analogy', content: chap.analogy, color: '#EFF6FF', border: '#BFDBFE' },
+                          { label: '📐 Syntax / Formula', content: chap.syntax, color: '#F5F3FF', border: '#C4B5FD', mono: true },
+                          { label: '💻 Code Example', content: chap.codeExample, color: '#F0FDF4', border: '#86EFAC', mono: true },
+                          { label: '⚠️ Common Pitfalls', content: chap.pitfalls, color: '#FEF9C3', border: '#FDE68A' },
+                        ].map((layer, i) => (
+                          <div key={i} style={{ backgroundColor: layer.color, border: `1px solid ${layer.border}`, borderRadius: 'var(--radius-md)', padding: '12px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '6px', color: '#374151' }}>{layer.label}</div>
+                            <div style={{ fontSize: '12px', lineHeight: '1.6', color: '#1F2937', fontFamily: layer.mono ? 'monospace' : 'inherit', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{layer.content}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Challenge */}
+                      <div style={{ backgroundColor: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 'var(--radius-md)', padding: '12px', marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: '#C2410C', marginBottom: '6px' }}>🏆 Practice Challenge</div>
+                        <div style={{ fontSize: '13px', color: '#1F2937', fontWeight: '600' }}>{chap.challenge}</div>
+                      </div>
+
+                      {/* Mark complete */}
+                      <button onClick={() => markComplete(chap.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
+                          borderRadius: 'var(--radius-md)', fontSize: '12px', fontWeight: '700',
+                          backgroundColor: isDone ? '#DCFCE7' : 'var(--accent)', border: isDone ? '1px solid #86EFAC' : 'none',
+                          color: isDone ? '#166534' : '#fff', cursor: 'pointer', marginTop: '8px'
+                        }}>
+                        {isDone ? <><CheckCircle2 size={14} /> Marked Complete ✓</> : <><Star size={14} /> Mark as Complete</>}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* STEM Summary Sidebar */}
+        <div style={{ position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Branch overview card */}
+          <div className="card" style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <BrainCircuit size={18} color={stemInfo.color} />
+              <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0 }}>{stemInfo.name} AI Lab</h3>
+            </div>
+
+            {gradeData ? (
+              <>
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Key Points</div>
+                  {gradeData.keyPoints.map((pt, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12px', marginBottom: '5px', color: 'var(--text-main)' }}>
+                      <span style={{ color: stemInfo.color, flexShrink: 0, marginTop: '2px' }}>▸</span>
+                      <span>{pt}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', padding: '10px 12px', marginBottom: '12px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>🌍 Real World</div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>{gradeData.realWorld}</p>
+                </div>
+
+                {stemSummary ? (
+                  <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--text-main)', whiteSpace: 'pre-line', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', padding: '12px', border: '1px solid var(--border-light)' }}>
+                    <div style={{ fontWeight: '700', color: stemInfo.color, marginBottom: '6px', fontSize: '11px' }}>✨ AI Summary</div>
+                    {stemSummary}
+                    <button onClick={() => setStemSummary('')} style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-faint)', display: 'block', cursor: 'pointer' }}>↺ Regenerate</button>
+                  </div>
+                ) : (
+                  <button onClick={generateStemSummary} disabled={isSummarizing} className="btn-primary"
+                    style={{ width: '100%', padding: '9px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    {isSummarizing ? (<><div style={{ width: '12px', height: '12px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} /> Generating...</>) : (<><Sparkles size={13} /> AI-Summarise Class {selectedGrade === 'all' ? '8-12' : selectedGrade}</>)}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p style={{ fontSize: '13px', color: 'var(--text-faint)' }}>Select a specific grade to see the {stemInfo.name} overview.</p>
+            )}
+          </div>
+
+          {/* Progress tracker */}
+          <div className="card" style={{ padding: '16px' }}>
+            <div style={{ fontSize: '12px', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)' }}>
+              <CheckCircle2 size={14} color="#22C55E" /> Chapter Progress
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--bg-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.round((completedChapters.length / Math.max(NCERT_CHAPTERS.length, 1)) * 100)}%`, backgroundColor: '#22C55E', borderRadius: '99px', transition: 'width 0.4s' }} />
+              </div>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#22C55E' }}>{completedChapters.length}/{NCERT_CHAPTERS.length}</span>
             </div>
           </div>
-        ))}
+        </div>
+      </div>
+
+      {/* ── LOWER SECTION: Full-width AI Chatbot ── */}
+      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+        {/* Chatbot header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px', backgroundColor: 'var(--bg-subtle)',
+          borderBottom: '1px solid var(--border-light)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BrainCircuit size={16} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-main)' }}>STEM Socratic AI Mentor</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-faint)' }}>
+                {selectedChap ? `📖 ${selectedChap.title}` : `🔭 ${stemInfo?.name} · Class ${selectedGrade === 'all' ? '8-12' : selectedGrade}`}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Socratic Hint button */}
+            <button onClick={getNextHint}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '7px 14px', borderRadius: 'var(--radius-md)',
+                backgroundColor: showHint ? '#FEF3C7' : 'var(--bg-card)',
+                border: `1px solid ${showHint ? '#FCD34D' : 'var(--border-medium)'}`,
+                color: showHint ? '#92400E' : 'var(--text-muted)',
+                fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+              }}>
+              <Lightbulb size={14} color={showHint ? '#D97706' : 'currentColor'} />
+              Get Hint
+            </button>
+
+            {/* Language selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '5px 10px' }}>
+              <Globe size={13} color="var(--text-faint)" />
+              <select value={chatLang} onChange={(e) => setChatLang(e.target.value)}
+                style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: '600', color: 'var(--text-main)', cursor: 'pointer', outline: 'none' }}>
+                {LANG_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Hint strip */}
+        {showHint && (
+          <div style={{
+            backgroundColor: '#FFFBEB', borderBottom: '1px solid #FDE68A',
+            padding: '10px 20px', fontSize: '13px', color: '#92400E', fontWeight: '600',
+            display: 'flex', alignItems: 'center', gap: '8px'
+          }}>
+            <Lightbulb size={14} color="#D97706" />
+            <span>{(HINTS[selectedStem] || HINTS.cs)[hintIndex]}</span>
+            <button onClick={() => setShowHint(false)} style={{ marginLeft: 'auto', fontSize: '11px', color: '#D97706', cursor: 'pointer' }}>✕ Hide</button>
+          </div>
+        )}
+
+        {/* Chat messages */}
+        <div style={{ height: '320px', overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {chatMessages.map((msg, i) => (
+            <div key={i} style={{
+              alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '75%', padding: '12px 16px', borderRadius: 'var(--radius-md)',
+              fontSize: '13px', lineHeight: '1.6',
+              backgroundColor: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-subtle)',
+              color: msg.role === 'user' ? '#fff' : 'var(--text-main)',
+              border: msg.role === 'user' ? 'none' : '1px solid var(--border-light)'
+            }}>
+              {msg.text}
+            </div>
+          ))}
+          {isChatLoading && (
+            <div style={{ alignSelf: 'flex-start', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '12px 16px', display: 'flex', gap: '4px', alignItems: 'center' }}>
+              {[0, 1, 2].map(d => (
+                <div key={d} style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: 'var(--text-faint)', animation: `bounce 1.2s ${d * 0.2}s infinite` }} />
+              ))}
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Chat quick starters */}
+        <div style={{ padding: '0 20px 10px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button type="button" onClick={handleSummarizeSourceChat} disabled={isChatLoading}
+            style={{
+              fontSize: '11px',
+              padding: '5px 12px',
+              borderRadius: 'var(--radius-full)',
+              background: 'linear-gradient(135deg, var(--accent) 0%, #F59E0B 100%)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 4px rgba(235,94,40,0.2)'
+            }}>
+            <Sparkles size={11} /> Summarize Source
+          </button>
+          {[
+            `Explain ${selectedChap?.title || stemInfo?.name} with a real-life example`,
+            'What are the most common mistakes students make?',
+            'Give me a practice problem to test my understanding',
+            'How is this useful in real life?'
+          ].map((q, i) => (
+            <button key={i} type="button" onClick={() => { setChatInput(q); }}
+              style={{ fontSize: '11px', padding: '4px 10px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-light)', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              💬 {q}
+            </button>
+          ))}
+        </div>
+
+        {/* Chat input */}
+        <form onSubmit={handleSendChat} style={{
+          padding: '12px 20px 16px', borderTop: '1px solid var(--border-light)',
+          display: 'flex', gap: '10px', alignItems: 'center'
+        }}>
+          <input
+            className="form-input"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            placeholder={`Ask anything about ${selectedChap?.title || stemInfo?.name || 'STEM'} in ${LANG_OPTIONS.find(l => l.code === chatLang)?.label || 'English'}...`}
+            style={{ flex: 1, fontSize: '13px' }}
+          />
+          <button type="submit" disabled={isChatLoading || !chatInput.trim()} className="btn-primary"
+            style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Send size={14} /> Ask Mentor
+          </button>
+        </form>
       </div>
 
       <ISLVideoPlayerModal
@@ -236,6 +745,17 @@ export default function NCERTSection({ setCurrentTab, setSelectedProject }) {
         conceptName={activeConcept}
         signDescription="NCERT syllabus mapped ISL gesture video clip"
       />
+
+      <style>{`
+        @keyframes bounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-6px); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

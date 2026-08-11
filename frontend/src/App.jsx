@@ -15,6 +15,19 @@ export default function App() {
   // Active navigation tab state
   const [activeTab, setActiveTab] = useState('workspace');
 
+  const handleSetTab = (tab) => {
+    const activeUser = userName || localStorage.getItem('codeseekho_username');
+    // Silently block tab navigation if not logged in
+    if (!activeUser && tab !== 'landing') {
+      return;
+    }
+    // Silently block students from teacher portal
+    if (tab === 'teacher' && userRole !== 'teacher') {
+      return;
+    }
+    setCurrentTab(tab);
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       {/* Top Navbar */}

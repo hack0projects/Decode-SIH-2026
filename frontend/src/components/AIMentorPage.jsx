@@ -47,6 +47,24 @@ export default function AIMentorPage({ user }) {
             onChange={(e) => setQuestion(e.target.value)}
           ></textarea>
           <button
+            type="button"
+            onClick={() => {
+              startListening(getLocaleCode(selectedLang), (text) => {
+                setInputQuery(text);
+              });
+            }}
+            style={{
+              padding: "10px",
+              borderRadius: "var(--radius-md)",
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-medium)",
+              cursor: "pointer",
+            }}
+          >
+            <Mic size={16} color="var(--accent)" />
+          </button>
+
+          <button
             type="submit"
             disabled={loading}
             className={`mt-4 px-6 py-3 rounded-xl font-semibold text-white transition-all shadow-sm ${

@@ -14,7 +14,7 @@ import {
   Brain
 } from 'lucide-react';
 
-export default function HomeDashboard({ setCurrentTab, islMode, currentLang }) {
+export default function HomeDashboard({ setCurrentTab, islMode, currentLang, userName }) {
   const currentLesson = {
     title: "Chapter 3: Control Flow & Loops in Python",
     ncertCode: "NCERT Class 8 CS · Unit 2",
@@ -108,7 +108,7 @@ export default function HomeDashboard({ setCurrentTab, islMode, currentLang }) {
       }}>
         <div style={{ flex: 1, minWidth: '280px' }}>
           <h1 style={{ fontSize: '32px', fontWeight: '800', letterSpacing: '-0.5px', margin: 0, color: 'var(--text-main)' }}>
-            Namaste, Aarav 👋
+            Namaste, {userName || 'Aarav'} 👋
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px', margin: 0 }}>
             Class 8B · CodeSeekho AI Student Dashboard · Language: <strong style={{ textTransform: 'uppercase', color: 'var(--accent)' }}>{currentLang}</strong>
