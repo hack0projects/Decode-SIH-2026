@@ -1,20 +1,31 @@
 import React from "react";
 import { X, Hand, Play, Pause, CheckCircle2 } from "lucide-react";
+import { buildIslSequence, resolveIslSourceText } from "../components/islUtils";
 
+/**
+ * Props:
+ * - isOpen, onClose
+ * - conceptName: short label shown in the header (e.g. "Loop Iteration")
+ * - fullText: the ENGLISH base reply (englishText) — the whole statement
+ *   to be read out in ISL. Always English, no matter what language is
+ *   currently selected in chat, because isl_mapping.json is English-only.
+ * - displayText: (optional) fallback if fullText/englishText wasn't captured.
+ */
 export default function ISLVideoPlayerModal({
   isOpen,
   onClose,
   conceptName,
-  signDescription,
+  fullText,
+  displayText,
 }) {
   const [mappingData, setMappingData] = React.useState(null);
-  const [displayContent, setDisplayContent] = React.useState(null);
+  const [sequence, setSequence] = React.useState([]);
+  const [index, setIndex] = React.useState(0);
   const [letterIndex, setLetterIndex] = React.useState(0);
-  // For multi-word video cycling
-  const [videoClips, setVideoClips] = React.useState([]);
-  const [clipIndex, setClipIndex] = React.useState(0);
+  const [isPlaying, setIsPlaying] = React.useState(true);
+  const [speed, setSpeed] = React.useState(1); // 0.5x - 2x playback speed
+  const videoRef = React.useRef(null);
 
-  // Load the ISL mapping file once
   React.useEffect(() => {
     fetch("/isl/isl_mapping.json")
       .then((res) => res.json())
@@ -22,61 +33,75 @@ export default function ISLVideoPlayerModal({
       .catch((err) => console.error("ISL mapping load failed:", err));
   }, []);
 
-  // BUG FIX 1: Collect ALL matched word clips for the full concept phrase,
-  // not just the first matched word. This means a concept like
-  // "Loop Iteration" can show a clip for "loop" AND one for "iteration"
-  // in sequence, giving a full concept explanation rather than one word.
   React.useEffect(() => {
-    if (!mappingData || !conceptName || !isOpen) return;
+    if (!mappingData || !isOpen) return;
+    const sourceText = resolveIslSourceText(
+      fullText,
+      displayText || conceptName,
+    );
+    const seq = buildIslSequence(sourceText, mappingData);
+
+    if (seq.length === 0 && conceptName) {
+      const fallbackWord = conceptName.split(/\s+/)[0]?.toLowerCase();
+      if (fallbackWord)
+        seq.push({
+          type: "fingerspell",
+          word: fallbackWord,
+          original: fallbackWord,
+        });
+    }
+
+    setSequence(seq);
+    setIndex(0);
     setLetterIndex(0);
-    setClipIndex(0);
+    setIsPlaying(true);
+  }, [mappingData, fullText, displayText, conceptName, isOpen]);
 
-    const skipWords = [
-      "a", "an", "the", "is", "in", "of", "and", "or", "for",
-      "with", "to", "from", "at", "by", "on",
-    ];
-    const words = conceptName.toLowerCase().split(/\s+/);
+  const current = sequence[index] || null;
 
-    // Collect every word that has a known ISL video
-    const matched = words
-      .filter((w) => !skipWords.includes(w) && mappingData.known_words?.[w])
-      .map((w) => ({ type: "video", path: `/isl/${mappingData.known_words[w]}`, word: w }));
-
-    if (matched.length > 0) {
-      // We have at least one video — store all clips and show the first
-      setVideoClips(matched);
-      setDisplayContent(matched[0]);
-    } else {
-      // No known video — fingerspell the most meaningful word
-      const target = words.find((w) => !skipWords.includes(w)) || words[0];
-      setVideoClips([]);
-      setDisplayContent({ type: "fingerspell", word: target });
-    }
-  }, [mappingData, conceptName, isOpen]);
-
-  // Animate through letters if fingerspelling
+  // Fingerspelling: animate through letters (speed-adjusted), then auto-advance.
   React.useEffect(() => {
-    if (displayContent?.type !== "fingerspell") return;
-    const word = displayContent.word.toUpperCase();
-    if (letterIndex >= word.length) return;
-    const timer = setTimeout(() => setLetterIndex(letterIndex + 1), 500);
+    if (!isOpen || current?.type !== "fingerspell") return;
+    const word = current.word.toUpperCase();
+    if (letterIndex >= word.length) {
+      if (isPlaying) {
+        const t = setTimeout(() => goNext(), 500 / speed);
+        return () => clearTimeout(t);
+      }
+      return;
+    }
+    const timer = setTimeout(() => setLetterIndex((i) => i + 1), 450 / speed);
     return () => clearTimeout(timer);
-  }, [displayContent, letterIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, letterIndex, isPlaying, isOpen, speed]);
 
-  // Advance to the next video clip in the sequence
-  const handleNextClip = () => {
-    const next = clipIndex + 1;
-    if (next < videoClips.length) {
-      setClipIndex(next);
-      setDisplayContent(videoClips[next]);
-    }
+  // Keep video playback rate in sync with the chosen speed.
+  React.useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = speed;
+  }, [speed, current]);
+
+  const goNext = () => {
+    setIndex((i) => {
+      const next = i + 1;
+      if (next >= sequence.length) {
+        setIsPlaying(false);
+        return i;
+      }
+      setLetterIndex(0);
+      return next;
+    });
   };
-  const handlePrevClip = () => {
-    const prev = clipIndex - 1;
-    if (prev >= 0) {
-      setClipIndex(prev);
-      setDisplayContent(videoClips[prev]);
-    }
+  const goPrev = () => {
+    setIndex((i) => {
+      const prev = i - 1;
+      if (prev < 0) return i;
+      setLetterIndex(0);
+      return prev;
+    });
+  };
+
+  const handleVideoEnded = () => {
+    if (isPlaying) goNext();
   };
 
   if (!isOpen) return null;
@@ -131,7 +156,7 @@ export default function ISLVideoPlayerModal({
             }}
           >
             <Hand size={20} color="#D97706" />
-            <span>ISL Gesture Clip: {conceptName || "Programming Logic"}</span>
+            <span>ISL: {conceptName || "Programming Logic"}</span>
           </div>
           <button
             onClick={onClose}
@@ -145,120 +170,190 @@ export default function ISLVideoPlayerModal({
         <div
           style={{
             backgroundColor: "#000000",
-            height: "280px",
-            position: "relative",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
             color: "#FFFFFF",
           }}
         >
-          {!displayContent && (
-            <div style={{ fontSize: "13px", opacity: 0.7 }}>
-              Loading ISL content...
-            </div>
-          )}
-
-          {displayContent?.type === "video" && (
-            <video
-              key={displayContent.path}
-              src={displayContent.path}
-              autoPlay
-              loop
-              muted
-              style={{ maxHeight: "200px", borderRadius: "8px" }}
-            />
-          )}
-
-          {displayContent?.type === "fingerspell" && (
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                padding: "0 20px",
-              }}
-            >
-              {displayContent.word
-                .toUpperCase()
-                .split("")
-                .map((ch, i) => (
-                  <img
-                    key={i}
-                    src={`/isl/ISL_Letters/${ch}.jpg`}
-                    alt={ch}
-                    style={{
-                      width: "48px",
-                      height: "48px",
-                      objectFit: "cover",
-                      borderRadius: "6px",
-                      border:
-                        i === letterIndex
-                          ? "3px solid #FCD34D"
-                          : "2px solid rgba(255,255,255,0.3)",
-                      opacity: i <= letterIndex ? 1 : 0.4,
-                      transition: "all 0.2s ease",
-                    }}
-                  />
-                ))}
-            </div>
-          )}
-
-          {/* Multi-clip navigation — shown only when there are multiple matched words */}
-          {videoClips.length > 1 && (
-            <div style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              backgroundColor: "rgba(0,0,0,0.7)",
-              padding: "4px 10px",
-              borderRadius: "20px",
-              fontSize: "12px",
-              color: "#FFFFFF"
-            }}>
-              <button
-                onClick={handlePrevClip}
-                disabled={clipIndex === 0}
-                style={{ color: clipIndex === 0 ? "#666" : "#FCD34D", background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}
-              >◀</button>
-              <span style={{ fontWeight: "700" }}>
-                {videoClips[clipIndex]?.word?.toUpperCase()} ({clipIndex + 1}/{videoClips.length})
-              </span>
-              <button
-                onClick={handleNextClip}
-                disabled={clipIndex === videoClips.length - 1}
-                style={{ color: clipIndex === videoClips.length - 1 ? "#666" : "#FCD34D", background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}
-              >▶</button>
-            </div>
-          )}
-
-          {/* BUG FIX 1: Subtitle now shows the full signDescription passed by the
-              caller (the actual concept explanation) instead of a generic fallback. */}
+          {/* Sign display area */}
           <div
             style={{
-              position: "absolute",
-              bottom: "16px",
-              left: "16px",
-              right: "16px",
-              backgroundColor: "rgba(0,0,0,0.8)",
-              padding: "10px 14px",
-              borderRadius: "var(--radius-sm)",
-              fontSize: "12px",
-              border: "1px solid rgba(255,255,255,0.2)",
+              height: "220px",
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <div style={{ color: "#FCD34D", fontWeight: "700", marginBottom: "4px" }}>
-              {displayContent?.type === "video" ? `ISL: "${conceptName}"` : "Fingerspelling:"}
+            {!current && (
+              <div style={{ fontSize: "13px", opacity: 0.7 }}>
+                Loading ISL content...
+              </div>
+            )}
+
+            {current?.type === "video" && (
+              <video
+                key={current.path}
+                ref={videoRef}
+                src={current.path}
+                autoPlay
+                muted
+                onEnded={handleVideoEnded}
+                onLoadedMetadata={(e) => {
+                  e.currentTarget.playbackRate = speed;
+                }}
+                style={{ maxHeight: "180px", borderRadius: "8px" }}
+              />
+            )}
+
+            {current?.type === "fingerspell" && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  padding: "0 20px",
+                }}
+              >
+                {current.word
+                  .toUpperCase()
+                  .split("")
+                  .map((ch, i) => (
+                    <img
+                      key={i}
+                      src={`/isl/ISL_Letters/${ch}.jpg`}
+                      alt={ch}
+                      style={{
+                        width: "48px",
+                        height: "48px",
+                        objectFit: "cover",
+                        borderRadius: "6px",
+                        border:
+                          i === letterIndex
+                            ? "3px solid #FCD34D"
+                            : "2px solid rgba(255,255,255,0.3)",
+                        opacity: i <= letterIndex ? 1 : 0.4,
+                        transition: "all 0.2s ease",
+                      }}
+                    />
+                  ))}
+              </div>
+            )}
+
+            {sequence.length > 1 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "10px",
+                  right: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  backgroundColor: "rgba(0,0,0,0.7)",
+                  padding: "4px 10px",
+                  borderRadius: "20px",
+                  fontSize: "12px",
+                  color: "#FFFFFF",
+                }}
+              >
+                <button
+                  onClick={goPrev}
+                  disabled={index === 0}
+                  style={{
+                    color: index === 0 ? "#666" : "#FCD34D",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                  }}
+                >
+                  ◀
+                </button>
+                <button
+                  onClick={() => setIsPlaying((p) => !p)}
+                  style={{
+                    color: "#FCD34D",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                  title={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                </button>
+                <span style={{ fontWeight: "700" }}>
+                  {index + 1}/{sequence.length}
+                </span>
+                <button
+                  onClick={goNext}
+                  disabled={index === sequence.length - 1}
+                  style={{
+                    color: index === sequence.length - 1 ? "#666" : "#FCD34D",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                  }}
+                >
+                  ▶
+                </button>
+                {/* Speed controller */}
+                <select
+                  value={speed}
+                  onChange={(e) => setSpeed(Number(e.target.value))}
+                  style={{
+                    marginLeft: "4px",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "#FCD34D",
+                    background: "rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(252,211,77,0.4)",
+                    borderRadius: "10px",
+                    padding: "2px 4px",
+                    cursor: "pointer",
+                  }}
+                  title="Playback speed"
+                >
+                  <option value={0.5}>0.5x</option>
+                  <option value={1}>1x</option>
+                  <option value={1.5}>1.5x</option>
+                  <option value={2}>2x</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Subtitle strip — ONLY the current word, label reflects the
+              actual type of THIS sign (video = SIGNING, fingerspelled = FINGERSPELLING) */}
+          <div
+            style={{
+              padding: "12px 14px",
+              borderTop: "1px solid rgba(255,255,255,0.15)",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#FCD34D",
+                fontWeight: "700",
+                marginBottom: "4px",
+                letterSpacing: "0.5px",
+              }}
+            >
+              {current?.type === "video" ? "SIGNING" : "FINGERSPELLING"}
             </div>
-            <div style={{ lineHeight: "1.4" }}>
-              {signDescription
-                ? signDescription
-                : `Sign gesture for the concept "${conceptName}"`}
+            <div
+              style={{
+                fontSize: "22px",
+                fontWeight: "800",
+                letterSpacing: "1px",
+              }}
+            >
+              {(current?.original || current?.word || "").toUpperCase()}
             </div>
           </div>
         </div>
@@ -285,7 +380,9 @@ export default function ISLVideoPlayerModal({
             <CheckCircle2 size={14} />
             <span>Grounded in NCERT Computer Science Vocabulary</span>
           </div>
-          Curated ISL gestures mapped for Class 8+ CS curriculum.
+          Curated ISL gestures mapped for Class 8+ CS curriculum. Signs are
+          always matched from the English base answer, so this works the same
+          way no matter which language is selected in chat.
         </div>
       </div>
     </div>
