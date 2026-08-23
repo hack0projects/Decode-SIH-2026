@@ -4,7 +4,7 @@ import { useCurrentFrame, useVideoConfig, interpolate, spring } from 'remotion';
 // SubtitleBar -- Word-level synchronized subtitles
 // subtitleWords: [{ word, startFrame, endFrame }]
 // =============================================================================
-function SubtitleBar({ subtitleWords = [], totalFrames, audioFrames }) {
+export function SubtitleBar({ subtitleWords = [], totalFrames, audioFrames }) {
   const frame = useCurrentFrame();
   if (!subtitleWords.length) return null;
 

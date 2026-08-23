@@ -97,3 +97,5 @@ export const RemotionRoot = () => {
     />
   );
 };
+import { registerRoot } from 'remotion';
+registerRoot(RemotionRoot);
