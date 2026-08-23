@@ -1,0 +1,23 @@
+{
+  "name": "codeseekho-video-engine",
+  "version": "1.0.0",
+  "description": "CodeSeekho — Dynamic Programmatic Educational Video Engine powered by Remotion",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "npx remotion studio src/Root.jsx",
+    "build": "npx remotion render src/Root.jsx CodeSeekho-PythonLoops out/PythonLoops.mp4",
+    "upgrade": "npx remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.285",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "remotion": "4.0.285"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.0",
+    "@types/react-syntax-highlighter": "^15.5.13"
+  }
+}
