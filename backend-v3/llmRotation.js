@@ -55,11 +55,11 @@ const callOpenAICompatible = async (url, apiKey, modelName, prompt, truncateChar
   return data.choices?.[0]?.message?.content ?? "";
 };
 
-// Groq: use compound-mini (131K context) — truncate input to 6000 chars to stay within 8K TPM
+// Groq: use Llama 3.1 8B (fast, large context) — truncate input to 6000 chars to stay within TPM limits
 const callGroq = (prompt) => callOpenAICompatible(
   "https://api.groq.com/openai/v1/chat/completions",
   process.env.GROQ_API_KEY,
-  "groq/compound-mini",
+  "llama-3.1-8b-instant",
   prompt,
   6000
 );

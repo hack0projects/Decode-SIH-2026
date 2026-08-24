@@ -163,12 +163,12 @@ app.get('/credits', async (_req, res) => {
     const gr = await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + process.env.GROQ_API_KEY } });
     if (gr.ok) {
       const d = await gr.json();
-      results.push({ name: 'Groq (Qwen 3.6)', status: 'ok', info: d.data?.length + ' models available', limit: '14,400 tok/min (free)', color: 'green' });
+      results.push({ name: 'Groq (Llama 3.1)', status: 'ok', info: d.data?.length + ' models available', limit: '14,400 tok/min (free)', color: 'green' });
     } else {
-      results.push({ name: 'Groq (Qwen 3.6)', status: 'error', info: 'API returned ' + gr.status, limit: '14,400 tok/min (free)', color: 'red' });
+      results.push({ name: 'Groq (Llama 3.1)', status: 'error', info: 'API returned ' + gr.status, limit: '14,400 tok/min (free)', color: 'red' });
     }
   } catch(e) {
-    results.push({ name: 'Groq (Qwen 3.6)', status: 'error', info: e.message?.slice(0,60), limit: '14,400 tok/min (free)', color: 'red' });
+    results.push({ name: 'Groq (Llama 3.1)', status: 'error', info: e.message?.slice(0,60), limit: '14,400 tok/min (free)', color: 'red' });
   }
 
   // 3. Cloudflare — check via a tiny prompt
