@@ -141,30 +141,249 @@ app.get('/health', (_req, res) => {
 });
 
 // =============================================================================
+// GET /credits  — Live credit/quota status for all AI APIs
+// =============================================================================
+app.get('/credits', async (_req, res) => {
+  const results = [];
+
+  // 1. Gemini — check via a tiny prompt, read quota headers
+  try {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
+    await model.generateContent('say ok');
+    results.push({ name: 'Gemini 3.5 Flash Lite', status: 'ok', info: 'Responding normally', limit: '20 req/day (free)', color: 'green' });
+  } catch(e) {
+    const is429 = e.message?.includes('429') || e.message?.includes('quota');
+    results.push({ name: 'Gemini 3.5 Flash Lite', status: is429 ? 'rate_limited' : 'error', info: is429 ? 'Daily quota hit (20/day free limit)' : e.message?.slice(0,80), limit: '20 req/day (free)', color: is429 ? 'orange' : 'red' });
+  }
+
+  // 2. Groq — check via models list (fast, no quota cost)
+  try {
+    const gr = await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: 'Bearer ' + process.env.GROQ_API_KEY } });
+    if (gr.ok) {
+      const d = await gr.json();
+      results.push({ name: 'Groq (Qwen 3.6)', status: 'ok', info: d.data?.length + ' models available', limit: '14,400 tok/min (free)', color: 'green' });
+    } else {
+      results.push({ name: 'Groq (Qwen 3.6)', status: 'error', info: 'API returned ' + gr.status, limit: '14,400 tok/min (free)', color: 'red' });
+    }
+  } catch(e) {
+    results.push({ name: 'Groq (Qwen 3.6)', status: 'error', info: e.message?.slice(0,60), limit: '14,400 tok/min (free)', color: 'red' });
+  }
+
+  // 3. Cloudflare — check via a tiny prompt
+  try {
+    const cf = await fetch(`https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-8b-instruct`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.CLOUDFLARE_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'hello' }] })
+    });
+    if (cf.ok) {
+      results.push({ name: 'Cloudflare (Llama 3.1)', status: 'ok', info: 'Responding normally', limit: '10,000 req/day (free)', color: 'green' });
+    } else {
+      results.push({ name: 'Cloudflare (Llama 3.1)', status: 'error', info: 'API returned ' + cf.status, limit: '10,000 req/day (free)', color: 'red' });
+    }
+  } catch(e) {
+    results.push({ name: 'Cloudflare (Llama 3.1)', status: 'error', info: e.message?.slice(0,60), limit: '10,000 req/day (free)', color: 'red' });
+  }
+
+  // 4. OpenRouter — check key info + usage
+  try {
+    const or = await fetch('https://openrouter.ai/api/v1/auth/key', { headers: { Authorization: 'Bearer ' + process.env.OPENROUTER_API_KEY } });
+    if (or.ok) {
+      const d = await or.json();
+      const usage = d.data?.usage_monthly ?? 0;
+      const limit = d.data?.limit;
+      const remaining = limit ? (limit - usage).toFixed(4) : 'Unlimited';
+      results.push({ name: 'OpenRouter (Gemma 4)', status: 'ok', info: 'Monthly used: $' + usage.toFixed(4) + ' | Remaining: ' + remaining, limit: 'Free tier (50+ models)', color: 'green' });
+    } else {
+      results.push({ name: 'OpenRouter (Gemma 4)', status: 'error', info: 'API returned ' + or.status, limit: 'Free tier', color: 'red' });
+    }
+  } catch(e) {
+    results.push({ name: 'OpenRouter (Gemma 4)', status: 'error', info: e.message?.slice(0,60), limit: 'Free tier', color: 'red' });
+  }
+
+  // 5. Deepgram (Voice) — check via project usage
+  try {
+    const dg = await fetch('https://api.deepgram.com/v1/projects', { headers: { Authorization: 'Token ' + process.env.DEEPGRAM_API_KEY } });
+    if (dg.ok) {
+      results.push({ name: 'Deepgram (Voice)', status: 'ok', info: 'Active & Responding', limit: '$200 Free Credit', color: 'green' });
+    } else {
+      results.push({ name: 'Deepgram (Voice)', status: 'error', info: 'API returned ' + dg.status, limit: '$200 Free Credit', color: 'red' });
+    }
+  } catch(e) {
+    results.push({ name: 'Deepgram (Voice)', status: 'error', info: e.message?.slice(0,60), limit: '$200 Free Credit', color: 'red' });
+  }
+
+  // 6. ElevenLabs — check subscription
+  try {
+    const el = await fetch('https://api.elevenlabs.io/v1/user/subscription', { headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY } });
+    if (el.ok) {
+      const d = await el.json();
+      const used = d.character_count ?? 0;
+      const limit = d.character_limit ?? 10000;
+      const pct = ((used / limit) * 100).toFixed(1);
+      results.push({ name: 'ElevenLabs (Voice)', status: pct > 90 ? 'warning' : 'ok', info: used.toLocaleString() + ' / ' + limit.toLocaleString() + ' chars used (' + pct + '%)', limit: limit.toLocaleString() + ' chars/month', color: pct > 90 ? 'orange' : 'green', used, total: limit, pct: parseFloat(pct) });
+    } else {
+      results.push({ name: 'ElevenLabs (Voice)', status: 'error', info: 'API returned ' + el.status, limit: '10,000 chars/month', color: 'red' });
+    }
+  } catch(e) {
+    results.push({ name: 'ElevenLabs (Voice)', status: 'error', info: e.message?.slice(0,60), limit: '10,000 chars/month', color: 'red' });
+  }
+
+  // 6. Edge TTS — always free
+  results.push({ name: 'Edge TTS (Voice Backup)', status: 'ok', info: 'Local system TTS — always available', limit: 'Unlimited', color: 'green' });
+
+  res.json({ credits: results, timestamp: new Date().toISOString() });
+});
+
+
+// =============================================================================
+// Prompt Builder Helper — NotebookLM-style deep educational script
+// =============================================================================
+function buildScriptPrompt(rawText, targetLanguage) {
+  return `You are an expert educational content creator, like NotebookLM, specializing in animated explainer videos for CodeSeekho.
+
+Your job is to READ the full INPUT TEXT thoroughly and convert it into a deeply rich, comprehensive educational video script that:
+- Covers EVERY important term, concept, keyword, and idea from the input
+- Defines EVERY technical term clearly (assume the viewer is a student encountering this for the first time)
+- Uses real-world analogies and examples to explain abstract concepts
+- Structures content progressively (simple → complex → application)
+
+CRITICAL TRANSLATION RULE:
+All spoken text (the "text" field) MUST be in **${targetLanguage}**. UI labels (heading, bullets) can stay in English.
+
+OUTPUT RULES:
+1. ONLY raw JSON. No markdown, no backticks, no explanation.
+2. Escape ALL newlines inside strings as \\n
+3. Escape ALL double-quotes inside strings as \\"
+
+SCHEMA:
+{
+  "title": "Descriptive educational title (max 70 chars)",
+  "language": "Python",
+  "summary": "A 3-4 sentence overview of the entire topic covered in this script.",
+  "keyTerms": ["Term1", "Term2", "Term3", "Term4", "Term5"],
+  "scenes": [ ...scene objects... ]
+}
+
+SCENE TYPES — use the most appropriate type for each concept:
+
+A) explainer — For concepts, definitions, properties:
+{ "type": "explainer", "heading": "Concept Name", "bullets": ["Point 1 with detail", "Point 2 with detail", "Point 3 with detail", "Point 4 with detail", "Point 5 with detail"], "highlights": ["Key Term 1", "Key Term 2"], "text": "Detailed 5-6 sentence narration defining the concept, explaining WHY it matters, giving a real-world analogy, and connecting it to other concepts." }
+
+B) comparison — For comparing two approaches, technologies, concepts:
+{ "type": "comparison", "leftTitle": "Concept A", "leftPoints": ["Point 1", "Point 2", "Point 3", "Point 4"], "rightTitle": "Concept B", "rightPoints": ["Point 1", "Point 2", "Point 3", "Point 4"], "text": "Detailed 5-6 sentence narration explaining the differences, when to use each, trade-offs and practical implications." }
+
+C) flowchart — For processes, algorithms, workflows:
+{ "type": "flowchart", "steps": ["Step 1: Description", "Step 2: Description", "Step 3: Description", "Step 4: Description", "Step 5: Description"], "colors": ["#7c3aed", "#0ea5e9", "#10b981", "#ef4444", "#f59e0b"], "text": "Detailed 5-6 sentence narration walking through every step, explaining what happens at each stage and why." }
+
+D) intro — For topic overviews and summaries:
+{ "type": "intro", "text": "Engaging Title\\nDetailed 6-8 sentence introduction/summary covering the full scope of what's being taught, all major themes, and why this topic is important for students." }
+
+E) code — For programming examples:
+{ "type": "code", "code": "# Detailed commented code showing the concept\\n# Each line commented\\ncode here", "text": "Detailed 5-6 sentence narration explaining what the code does line by line, what output it produces, and how it illustrates the concept." }
+
+MANDATORY RULES — follow ALL of these:
+1. MINIMUM 15 scenes. If the content is rich, generate 20-25 scenes. Cover EVERY sub-topic.
+2. Every scene's "text" must be AT LEAST 4-6 sentences long — no one-liners.
+3. For EVERY important term/keyword in the input: dedicate at least one bullet point or an entire scene to defining it.
+4. "bullets" array must have 4-6 items per explainer scene — each bullet must be a complete thought (not just a word).
+5. For code scenes: include REAL working code with comments on EVERY line.
+6. Scene order: intro → concept explainer → key terms → deep dive → comparisons → code examples → flowcharts → advanced concepts → real-world applications → summary
+7. The "summary" field in the root JSON must be a 3-4 sentence paragraph covering the entire topic.
+8. The "keyTerms" array must list ALL important vocabulary/technical terms found in the input (minimum 8 terms).
+9. Do NOT skip any section of the input text — convert EVERYTHING.
+10. Text fields must use conversational, teaching-style language — like a professor explaining to students.
+
+INPUT TEXT TO CONVERT:
+"""${rawText}"""
+
+JSON ONLY (no other text):`;
+}
+
+// =============================================================================
+// Video Prompt Builder — Balanced 4-5 min, covers all key topics (10-12 scenes)
+// =============================================================================
+function buildVideoPrompt(rawText, targetLanguage) {
+  return `You are an expert educational video scriptwriter for CodeSeekho.
+
+GOAL: Create a BALANCED, comprehensive animated explainer video that is 4-5 minutes long.
+- Cover ALL important terms, concepts, and topics from the input
+- Each scene explains ONE concept clearly with enough depth that a student understands it
+- Like a perfect college lecture summary — not too brief, not too long
+
+CRITICAL TRANSLATION RULE:
+All "text" narration fields MUST be in **${targetLanguage}**. UI labels (heading, bullets) stay in English.
+
+OUTPUT RULES:
+1. ONLY raw JSON. No markdown, no backticks, no explanation.
+2. Escape ALL newlines inside strings as \\n
+
+SCHEMA:
+{
+  "title": "Clear descriptive title (max 65 chars)",
+  "language": "Python",
+  "scenes": [ ...scene objects... ]
+}
+
+SCENE TYPES — pick the best fit for each concept:
+
+A) intro — Opening hook + topic overview:
+{ "type": "intro", "text": "Engaging Title\\n3-4 sentence opening that hooks the viewer, clearly states WHAT will be covered, and WHY this topic matters. Name all the major topics." }
+
+B) explainer — For concepts, definitions, properties:
+{ "type": "explainer", "heading": "Concept Name", "bullets": ["Point 1 — brief explanation", "Point 2 — brief explanation", "Point 3 — brief explanation", "Point 4 — brief explanation"], "highlights": ["Key Term 1", "Key Term 2"], "text": "3-4 sentence narration: define the concept, explain why it matters, give ONE real-world example or analogy, and connect it to the bigger picture." }
+
+C) comparison — For VS / trade-offs:
+{ "type": "comparison", "leftTitle": "Concept A", "leftPoints": ["Point 1", "Point 2", "Point 3", "Point 4"], "rightTitle": "Concept B", "rightPoints": ["Point 1", "Point 2", "Point 3", "Point 4"], "text": "3-4 sentences: explain the key differences, trade-offs, and when to use each option." }
+
+D) flowchart — For processes, algorithms, steps:
+{ "type": "flowchart", "steps": ["Step 1: What happens", "Step 2: What happens", "Step 3: What happens", "Step 4: What happens", "Step 5: What happens"], "colors": ["#7c3aed","#0ea5e9","#10b981","#ef4444","#f59e0b"], "text": "3-4 sentences walking through the process logically, explaining what happens at each stage." }
+
+E) code — For programming examples:
+{ "type": "code", "code": "# Commented code\\n# Each important line commented\\nactual_code_here", "text": "3-4 sentences explaining what this code does, what output it produces, and the key concept it demonstrates." }
+
+MANDATORY RULES:
+1. Generate EXACTLY 10-12 scenes. Not less, not more.
+2. Scene order: 1 intro → 6-8 explainer/comparison/flowchart scenes covering ALL key topics → 1-2 code scenes → 1 summary intro
+3. EVERY important term/keyword from the input MUST appear in at least one scene's bullets or heading.
+4. "text" narration = 3-4 sentences per scene — detailed enough to teach, concise enough to keep pace.
+5. "bullets" = 4 items per explainer scene. Each bullet is a complete thought, not just a word.
+6. Do NOT skip any topic from the input — all major concepts must be covered.
+7. The last scene MUST be a summary "intro" type recapping all topics covered.
+8. Use conversational teaching language — like a professor explaining to students.
+
+INPUT TEXT (cover ALL important concepts from this):
+"""${rawText}"""
+
+JSON ONLY:`;
+}
+
+// =============================================================================
 // Generate endpoints
 // =============================================================================
 app.post('/generate', (req, res) => {
-  const { raw_text } = req.body;
+  const { raw_text, script_language } = req.body;
   if (!raw_text?.trim() || raw_text.trim().length < 10)
     return res.status(400).json({ error: "'raw_text' must be >= 10 chars." });
   
-  // Return immediately with a new jobId, run pipeline in background
   const jobId = uuidv4();
-  runPipeline(jobId, raw_text.trim()).catch(console.error);
+  runPipeline(jobId, raw_text.trim(), script_language || 'English').catch(console.error);
   return res.status(200).json({ success: true, jobId });
 });
 
 app.post('/generate-from-file', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file. Field: 'file'" });
   const uploadedPath = req.file.path;
-  console.log(`\nFile: ${req.file.originalname}`);
+  const script_language = req.body.script_language || 'English';
+  console.log(`\nFile: ${req.file.originalname} | Target Language: ${script_language}`);
   try {
     const rawText = await extractText(uploadedPath, req.file.mimetype, req.file.originalname);
     if (rawText.trim().length < 20) return res.status(422).json({ error: 'Text too short.' });
     
-    // Return immediately with a new jobId, run pipeline in background
     const jobId = uuidv4();
-    runPipeline(jobId, rawText).catch(console.error).finally(() => fs.unlink(uploadedPath).catch(()=>{}));
+    runPipeline(jobId, rawText, script_language).catch(console.error).finally(() => fs.unlink(uploadedPath).catch(()=>{}));
     
     return res.status(200).json({ success: true, jobId, sourceFile: req.file.originalname });
   } catch (err) {
@@ -174,33 +393,200 @@ app.post('/generate-from-file', upload.single('file'), async (req, res) => {
 });
 
 // =============================================================================
-// scriptToMarkdown -- Convert JSON script to Markdown
+// Script-Only (Summary) endpoints
+// =============================================================================
+app.post('/generate-script', async (req, res) => {
+  const { raw_text, script_language } = req.body;
+  if (!raw_text?.trim() || raw_text.trim().length < 10)
+    return res.status(400).json({ error: "'raw_text' must be >= 10 chars." });
+  
+  try {
+    const prompt = buildScriptPrompt(raw_text.trim(), script_language || 'English');
+    // Using a dummy jobId for logging, we don't emit progress to the UI here since it's a blocking await
+    const script = await generateScriptWithRotation(prompt, () => {}, 'script-only');
+    const markdown = scriptToMarkdown(script);
+    return res.status(200).json({ success: true, markdown });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/generate-script-from-file', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file. Field: 'file'" });
+  const uploadedPath = req.file.path;
+  const script_language = req.body.script_language || 'English';
+  try {
+    const rawText = await extractText(uploadedPath, req.file.mimetype, req.file.originalname);
+    if (rawText.trim().length < 20) return res.status(422).json({ error: 'Text too short.' });
+    
+    const prompt = buildScriptPrompt(rawText, script_language);
+    const script = await generateScriptWithRotation(prompt, () => {}, 'script-only');
+    const markdown = scriptToMarkdown(script);
+  } catch (err) {
+    try { await fs.unlink(uploadedPath); } catch {}
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =============================================================================
+// scriptToMarkdown -- NotebookLM-style rich educational summary with Index
 // =============================================================================
 function scriptToMarkdown(script) {
   const lines = [];
   const now   = new Date().toLocaleDateString('en-IN', { dateStyle: 'long' });
-  lines.push(`# ${script.title}`);
-  lines.push(`> **Language:** ${script.language} | **Scenes:** ${script.scenes.length} | **Duration:** ~${script.duration}s | *CodeSeekho AI*`);
-  lines.push(''); lines.push('---'); lines.push('');
-  let n = 1;
-  for (const scene of script.scenes) {
+
+  // ── Helper: get topic title for each scene ─────────────────────────────────
+  function getTopicTitle(scene, idx) {
     if (scene.type === 'intro') {
-      const parts = (scene.text || '').split('\n');
-      lines.push(`## Scene ${n}: ${parts[0] || ''}`);
-      if (parts.slice(1).join('\n').trim()) lines.push(`\n${parts.slice(1).join('\n').trim()}`);
-      lines.push('');
-    } else if (scene.type === 'code') {
-      lines.push(`## Scene ${n}: Code Example`);
-      lines.push(''); lines.push('```' + script.language.toLowerCase().replace('c++','cpp'));
-      lines.push(scene.code || ''); lines.push('```'); lines.push('');
-    } else if (scene.type === 'visual') {
-      const label = scene.animation === 'forLoopIterator' ? 'For Loop Iterator' : 'While Counter';
-      lines.push(`## Scene ${n}: Visual -- ${label} Animation`);
-      lines.push(''); lines.push(`> *Animated: ${scene.animation}*`); lines.push('');
+      const first = (scene.text || '').split('\\n')[0] || (scene.text || '').split(/\\n/)[0] || '';
+      return first.trim() || (idx === 0 ? 'Introduction' : 'Summary');
     }
-    lines.push('---'); lines.push(''); n++;
+    if (scene.type === 'explainer')  return scene.heading || 'Concept Explanation';
+    if (scene.type === 'comparison') return `${scene.leftTitle || 'A'} vs ${scene.rightTitle || 'B'}`;
+    if (scene.type === 'flowchart')  return scene.steps?.[0]?.replace(/^step \d+[:\s]*/i,'') ? `Process: ${(scene.steps[0]||'').replace(/^Step \d+[:\s]*/i,'')}` : 'Process Flow';
+    if (scene.type === 'code')       return 'Code Example';
+    return `Topic ${idx + 1}`;
   }
-  lines.push(`*Generated on ${now} by CodeSeekho V2 AI Avatar Engine*`);
+
+  // Pre-build topic titles list for index
+  const topicTitles = script.scenes.map((s, i) => getTopicTitle(s, i));
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  lines.push(`# 📚 ${script.title}`);
+  lines.push(`> **Generated:** ${now} | **Topics:** ${script.scenes.length} | **Language:** ${script.language || 'General'} | *CodeSeekho AI*`);
+  lines.push('');
+
+  // ── Topic Overview ─────────────────────────────────────────────────────────
+  if (script.summary) {
+    lines.push('## 🎯 Overview');
+    lines.push('');
+    lines.push(script.summary);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+
+  // ── 📋 INDEX / Table of Contents ──────────────────────────────────────────
+  lines.push('## 📋 Index — Topics Covered');
+  lines.push('');
+  topicTitles.forEach((title, i) => {
+    const icon = (() => {
+      const t = script.scenes[i].type;
+      if (t === 'intro')      return i === 0 ? '🚀' : '🏁';
+      if (t === 'explainer')  return '📘';
+      if (t === 'comparison') return '⚖️';
+      if (t === 'flowchart')  return '🔄';
+      if (t === 'code')       return '💻';
+      return '📌';
+    })();
+    lines.push(`${i + 1}. ${icon} **${title}**`);
+  });
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // ── Key Terms Glossary ─────────────────────────────────────────────────────
+  if (script.keyTerms?.length) {
+    lines.push('## 🔑 Key Terms & Vocabulary');
+    lines.push('');
+    script.keyTerms.forEach(term => lines.push(`- **${term}**`));
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+
+  // ── Topic-by-Topic Content ─────────────────────────────────────────────────
+  lines.push('## 📖 Detailed Topic Breakdown');
+  lines.push('');
+
+  script.scenes.forEach((scene, idx) => {
+    const n = idx + 1;
+    const topicLabel = `Topic ${n}`;
+    const topicTitle = topicTitles[idx];
+
+    if (scene.type === 'intro') {
+      const parts = (scene.text || '').split(/\\n|\\\\n/);
+      lines.push(`### ${topicLabel}: ${topicTitle}`);
+      lines.push('');
+      const body = parts.slice(1).join(' ').trim();
+      if (body) lines.push(body);
+      else if (scene.text) lines.push(scene.text.replace(/\\\\n/g, ' ').replace(/\\n/g, ' '));
+      lines.push('');
+
+    } else if (scene.type === 'explainer') {
+      lines.push(`### ${topicLabel}: ${topicTitle}`);
+      lines.push('');
+      if (scene.bullets?.length) {
+        scene.bullets.forEach(b => lines.push(`- ${b}`));
+        lines.push('');
+      }
+      if (scene.text) {
+        lines.push('**📢 Explanation:**');
+        lines.push('');
+        lines.push('> ' + scene.text.replace(/\\\\n/g, ' ').replace(/\\n/g, ' '));
+        lines.push('');
+      }
+      if (scene.highlights?.length) {
+        lines.push(`**🏷️ Key Terms:** ${scene.highlights.map(h => `\`${h}\``).join(' · ')}`);
+        lines.push('');
+      }
+
+    } else if (scene.type === 'comparison') {
+      lines.push(`### ${topicLabel}: ${topicTitle}`);
+      lines.push('');
+      const leftPts  = scene.leftPoints  || [];
+      const rightPts = scene.rightPoints || [];
+      const maxRows  = Math.max(leftPts.length, rightPts.length);
+      lines.push(`| **${scene.leftTitle || 'Option A'}** | **${scene.rightTitle || 'Option B'}** |`);
+      lines.push('|---|---|');
+      for (let i = 0; i < maxRows; i++) {
+        lines.push(`| ${leftPts[i] || ''} | ${rightPts[i] || ''} |`);
+      }
+      lines.push('');
+      if (scene.text) {
+        lines.push('**📢 Explanation:**');
+        lines.push('');
+        lines.push('> ' + scene.text.replace(/\\\\n/g, ' ').replace(/\\n/g, ' '));
+        lines.push('');
+      }
+
+    } else if (scene.type === 'flowchart') {
+      lines.push(`### ${topicLabel}: ${topicTitle}`);
+      lines.push('');
+      if (scene.steps?.length) {
+        scene.steps.forEach((step, i) => lines.push(`${i + 1}. **${step}**`));
+        lines.push('');
+      }
+      if (scene.text) {
+        lines.push('**📢 Explanation:**');
+        lines.push('');
+        lines.push('> ' + scene.text.replace(/\\\\n/g, ' ').replace(/\\n/g, ' '));
+        lines.push('');
+      }
+
+    } else if (scene.type === 'code') {
+      lines.push(`### ${topicLabel}: ${topicTitle}`);
+      lines.push('');
+      if (scene.code) {
+        const lang = (script.language || 'python').toLowerCase().replace('c++', 'cpp').replace('c#', 'csharp');
+        lines.push('```' + lang);
+        lines.push(scene.code.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n'));
+        lines.push('```');
+        lines.push('');
+      }
+      if (scene.text) {
+        lines.push('**📢 Explanation:**');
+        lines.push('');
+        lines.push('> ' + scene.text.replace(/\\\\n/g, ' ').replace(/\\n/g, ' '));
+        lines.push('');
+      }
+    }
+
+    lines.push('---');
+    lines.push('');
+  });
+
+  lines.push(`*📅 Generated on ${now} by CodeSeekho AI — Powered by NotebookLM-style deep educational scripting*`);
   return lines.join('\n');
 }
 
@@ -288,52 +674,20 @@ async function getAudioDuration(audioPath, text) {
 // =============================================================================
 // runPipeline -- 5-Phase AI Avatar Pipeline
 // =============================================================================
-async function runPipeline(jobId, rawText) {
+async function runPipeline(jobId, rawText, targetLanguage = 'English') {
   const phase     = { current: 'init' };
   const tempFiles = [];
 
-  console.log(`\n${'='.repeat(60)}\nV2 Avatar Job: ${jobId}\n${'='.repeat(60)}`);
-  emitProgress(jobId, 2, 'init', 'Job started...');
+  console.log(`\n${'='.repeat(60)}\nV2 Avatar Job: ${jobId} | Target Language: ${targetLanguage}\n${'='.repeat(60)}`);
+  emitProgress(jobId, 2, 'init', `Job started... Target language: ${targetLanguage}`);
 
   try {
-    // PHASE 1 -- Gemini script (unlimited scenes)
+    // PHASE 1 -- Fast video script (max 8 scenes, short narration)
     phase.current = 'gemini';
-    console.log('\n[1/5] LLM -- generating unlimited-scene V3 animated script...');
-    emitProgress(jobId, 5, 'gemini', 'AI reading your content and planning V3 scenes...');
+    console.log('\n[1/5] LLM -- generating SHORT video script (max 8 scenes)...');
+    emitProgress(jobId, 5, 'gemini', `AI writing concise video script in ${targetLanguage}...`);
     
-    const prompt = `You are an expert animated explainer video scriptwriter for CodeSeekho.
-Read the TEXT below and convert EVERY concept into a comprehensive multi-scene video script with animated infographics.
-
-OUTPUT RULES:
-1. ONLY raw JSON. No markdown, no backticks.
-2. Escape all newlines inside strings as \\n
-
-SCHEMA:
-{
-  "title": "Engaging title (max 65 chars)",
-  "language": "Python",
-  "scenes": [ ... ]
-}
-
-SCENE TYPES (Pick the best one for each piece of content):
-A) explainer: { "type": "explainer", "heading": "Short Title", "bullets": ["Concept point 1", "Concept point 2", "Point 3"], "highlights": ["Concept", "Point 3"], "text": "What the AI avatar should say aloud (3-4 sentences)." }
-B) comparison: { "type": "comparison", "leftTitle": "Concept A", "leftPoints": ["A point 1"], "rightTitle": "Concept B", "rightPoints": ["B point 1"], "text": "What avatar says out loud comparing them." }
-C) flowchart: { "type": "flowchart", "steps": ["Start", "Do X", "Check Y", "End"], "colors": ["#7c3aed", "#0ea5e9", "#10b981", "#ef4444"], "text": "Avatar explanation of the flow." }
-D) intro: { "type": "intro", "text": "Headline\\nDetailed conversational explanation." }
-E) code: { "type": "code", "code": "# Commented code\\nprint('example')", "text": "What avatar says while code is typed." }
-
-RULES:
-1. NO TIME LIMIT. Minimum 10 scenes. Cover all text content.
-2. Use 'explainer' for concepts with bullet points. 3-4 bullets max.
-3. Use 'comparison' for VS or differences.
-4. Use 'flowchart' for processes or architectures.
-5. EVERY scene MUST have a "text" field, which is the exact script the voice AI will read.
-6. Order: intro(overview) -> explainer -> code -> comparison -> flowchart -> code -> intro(summary)
-
-INPUT TEXT:
-"""${rawText}"""
-
-JSON only:`;
+    const prompt = buildVideoPrompt(rawText, targetLanguage);
 
     let script;
     try {
@@ -346,28 +700,29 @@ JSON only:`;
     console.log(`   Script: "${script.title}" | ${script.scenes.length} scenes | ${script.language}`);
     emitProgress(jobId, 20, 'gemini', `Script ready: ${script.scenes.length} scenes generated`);
 
-    // PHASE 2 -- AI Voice + subtitle word timing
+    // PHASE 2 -- AI Voice + subtitle word timing for ALL scenes
     phase.current = 'voice';
     console.log('\n[2/5] AI Voice + subtitle timing...');
     emitProgress(jobId, 22, 'voice', 'Starting AI voice generation...');
     const audioFiles = [];
-    const introScenes = script.scenes.filter(s => s.type === 'intro').length;
+    const totalScenes = script.scenes.length;
     let voiceDone = 0;
     for (let i = 0; i < script.scenes.length; i++) {
       const scene = script.scenes[i];
-      if (scene.type !== 'intro') continue;
+      const voiceText = scene.text || scene.heading || scene.steps?.join('. ') || 'Scene ' + (i + 1);
+      if (!voiceText?.trim()) { voiceDone++; continue; }
       const audioPath = path.join(AUDIO_DIR, `${jobId}_scene_${i}.mp3`);
       tempFiles.push(audioPath);
       try {
-        const { engine } = await generateSpeech(scene.text, audioPath);
-        const durationSec = await getAudioDuration(audioPath, scene.text);
-        const subtitleWords = generateSubtitleWords(scene.text, durationSec);
+        const { engine } = await generateSpeech(voiceText, audioPath);
+        const durationSec = await getAudioDuration(audioPath, voiceText);
+        const subtitleWords = generateSubtitleWords(voiceText, durationSec);
         audioFiles.push({ sceneIndex: i, path: audioPath, engine, durationSec, subtitleWords });
         voiceDone++;
-        const voicePct = 22 + (voiceDone / introScenes) * 18;
-        emitProgress(jobId, voicePct, 'voice', `Voice: scene ${voiceDone}/${introScenes} done [${engine}]`);
-        console.log(`   Scene ${i} -> [${engine}] ${durationSec?.toFixed(1)}s ${subtitleWords.length} words`);
-      } catch(e) { console.warn(`   Voice skipped scene ${i}: ${e.message}`); }
+        const voicePct = 22 + (voiceDone / totalScenes) * 18;
+        emitProgress(jobId, voicePct, 'voice', `Voice: scene ${voiceDone}/${totalScenes} done [${engine}]`);
+        console.log(`   Scene ${i} [${scene.type}] -> [${engine}] ${durationSec?.toFixed(1)}s ${subtitleWords.length} words`);
+      } catch(e) { console.warn(`   Voice skipped scene ${i}: ${e.message}`); voiceDone++; }
     }
     emitProgress(jobId, 40, 'voice', `Voice complete: ${audioFiles.length} audio files`);
     console.log(`   Voice: ${audioFiles.length} audio files`);
@@ -397,24 +752,31 @@ JSON only:`;
     const outputVideoPath = path.join(VIDEO_DIR, `${jobId}.mp4`);
     tempFiles.push(jobScriptPath, outputVideoPath);
 
-    const audioMap = {};
-    for (const af of audioFiles) {
-      audioMap[af.sceneIndex] = {
-        audioUrl:      `http://localhost:${PORT}/audio/${path.basename(af.path)}`,
+    // Copy audio files to Remotion's public/audio folder so they're accessible during render
+    const remotionPublicAudio = path.join(REMOTION_ROOT, 'public', 'audio');
+    await fs.mkdir(remotionPublicAudio, { recursive: true });
+
+    const remotionAudioFiles = [];
+    for (const [idx, af] of audioFiles.entries()) {
+      const audioFilename = `${jobId}_scene_${af.sceneIndex ?? idx}.mp3`;
+      const destPath = path.join(remotionPublicAudio, audioFilename);
+      await fs.copyFile(af.path, destPath);
+      tempFiles.push(destPath);   // clean up after render
+      remotionAudioFiles.push({
+        sceneIndex:    af.sceneIndex ?? idx,
+        path:          `/audio/${audioFilename}`,  // Remotion's staticFile path (relative to public/)
         durationSec:   af.durationSec ?? 10,
         subtitleWords: af.subtitleWords ?? [],
-      };
+      });
     }
 
-    const enrichedScenes = script.scenes.map((scene, i) => {
-      if (audioMap[i]) {
-        return { ...scene, audioUrl: audioMap[i].audioUrl, audioDuration: audioMap[i].durationSec, subtitleWords: audioMap[i].subtitleWords };
-      }
-      return scene;
-    });
-
-    const v2Script = { ...script, scenes: enrichedScenes, language: script.language, avatarMode: true };
-    await fs.writeFile(jobScriptPath, JSON.stringify(v2Script, null, 2), 'utf8');
+    // Root.jsx V3VideoEngine expects: { script: { scenes, language, ... }, audioFiles: [...], avatarEngine }
+    const remotionProps = {
+      script: { ...script },
+      audioFiles: remotionAudioFiles,
+      avatarEngine: avatarResults[0]?.avatarEngine ?? 'Remotion-Avatar',
+    };
+    await fs.writeFile(jobScriptPath, JSON.stringify(remotionProps, null, 2), 'utf8');
 
     emitProgress(jobId, 60, 'render', `Rendering ${script.scenes.length} scenes via Remotion...`);
     const propsArg  = jobScriptPath.replace(/\\/g, '/');
@@ -440,13 +802,31 @@ JSON only:`;
     emitProgress(jobId, 85, 'render', 'Render complete!');
     console.log(`   Rendered: ${path.basename(outputVideoPath)}`);
 
-    // PHASE 5 -- Supabase upload
+    // PHASE 5 -- Compress + Supabase upload
     phase.current = 'upload';
-    console.log('\n[5/5] Supabase upload...');
-    emitProgress(jobId, 87, 'upload', 'Reading video file...');
+    console.log('\n[5/5] Compressing + Supabase upload...');
+    emitProgress(jobId, 85, 'upload', 'Compressing video for fast upload...');
+
+    // Compress with ffmpeg: CRF 28, 720p max, reduce size by ~60%
+    const compressedPath = outputVideoPath.replace('.mp4', '_compressed.mp4');
+    let uploadPath = outputVideoPath;
+    try {
+      const ffmpegCmd = `ffmpeg -y -i "${outputVideoPath}" -vf "scale=trunc(min(iw\\,1280)/2)*2:trunc(min(ih\\,720)/2)*2" -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 96k "${compressedPath}"`;
+      await execAsync(ffmpegCmd, { timeout: 300_000 });
+      const origSize = (await fs.stat(outputVideoPath)).size;
+      const compSize = (await fs.stat(compressedPath)).size;
+      console.log(`   Compressed: ${(origSize/1024/1024).toFixed(1)} MB → ${(compSize/1024/1024).toFixed(1)} MB`);
+      uploadPath = compressedPath;
+      tempFiles.push(compressedPath);
+    } catch (ffmpegErr) {
+      console.warn(`   ⚠️ Compression failed (${ffmpegErr.message}), uploading original...`);
+      uploadPath = outputVideoPath;
+    }
+
     const supabasePath = `videos/v2_${jobId}.mp4`;
-    const videoBuffer  = await fs.readFile(outputVideoPath);
-    emitProgress(jobId, 90, 'upload', `Uploading to Supabase (${(videoBuffer.length / 1024 / 1024).toFixed(1)} MB)...`);
+    const videoBuffer  = await fs.readFile(uploadPath);
+    const sizeMB = (videoBuffer.length / 1024 / 1024).toFixed(1);
+    emitProgress(jobId, 90, 'upload', `Uploading to Supabase (${sizeMB} MB)...`);
     const { error: uploadErr } = await supabase.storage.from(SUPABASE_BUCKET)
       .upload(supabasePath, videoBuffer, { contentType: 'video/mp4', upsert: false });
     if (uploadErr) throw Object.assign(new Error(`Upload: ${uploadErr.message}`), { phase: 'upload' });

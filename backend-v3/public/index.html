@@ -62,6 +62,11 @@ textarea::placeholder{color:#4b5563;}
 .step.done .step-badge{background:rgba(16,185,129,.2);color:#34d399;}
 .step.active .step-badge{background:rgba(124,58,237,.3);color:#a78bfa;}
 .step.wait .step-badge{background:rgba(255,255,255,.05);color:#4b5563;}
+.lang-row{display:flex;align-items:center;gap:12px;margin:14px 0 10px;padding:12px 16px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:12px;}
+.lang-label{font-size:13px;color:#a78bfa;font-weight:600;white-space:nowrap;}
+.lang-select{flex:1;background:#1e1b4b;color:#e2e8f0;border:1px solid rgba(124,58,237,.4);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;outline:none;}
+.lang-select:focus{border-color:#7c3aed;box-shadow:0 0 0 2px rgba(124,58,237,.2);}
+.lang-select option{background:#1e1b4b;color:#e2e8f0;}
 .pb-wrap{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
 .pb{height:100%;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:99px;width:0%;transition:width .5s;}
 .prog-label{text-align:center;margin-top:10px;color:#6b7280;font-size:13px;}
@@ -92,6 +97,29 @@ textarea::placeholder{color:#4b5563;}
 .jwatch{padding:7px 14px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;text-decoration:none;font-size:12px;}
 .no-jobs{text-align:center;color:#4b5563;padding:36px;}
 .refresh-btn{display:block;width:fit-content;margin:0 auto 16px;padding:8px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:8px;cursor:pointer;font-size:13px;}
+/* action row */
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.btn-outline{background:transparent;border:2px solid #7c3aed;color:#a78bfa;font-size:14px;font-weight:600;padding:13px;border-radius:12px;cursor:pointer;transition:.2s;}
+.btn-outline:hover{background:rgba(124,58,237,.15);}
+.btn-outline:disabled{opacity:.4;cursor:not-allowed;}
+/* summary modal */
+.sum-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.sum-overlay.show{display:flex;}
+.sum-modal{background:#111827;border:1px solid rgba(124,58,237,.4);border-radius:18px;width:100%;max-width:780px;margin:auto;padding:28px;position:relative;}
+.sum-modal h2{color:#a78bfa;font-size:20px;margin-bottom:6px;}
+.sum-modal .sum-meta{font-size:13px;color:#6b7280;margin-bottom:18px;}
+.sum-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:14px;}
+.sum-close:hover{background:rgba(255,255,255,.12);}
+.sum-content{background:#0f172a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px;font-size:13.5px;line-height:1.75;color:#e2e8f0;white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow-y:auto;}
+.sum-content h1{color:#a78bfa;font-size:18px;margin-bottom:8px;}
+.sum-content h2{color:#7c3aed;font-size:15px;margin:14px 0 4px;}
+.sum-content strong{color:#fbbf24;}
+.sum-content code{background:rgba(124,58,237,.15);color:#c4b5fd;padding:2px 6px;border-radius:4px;font-family:monospace;}
+.sum-content pre{background:#0a0f1a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;margin:10px 0;overflow-x:auto;}
+.sum-content blockquote{border-left:3px solid #7c3aed;padding-left:12px;color:#9ca3af;margin:8px 0;}
+.sum-footer{display:flex;gap:10px;margin-top:18px;}
+.sum-btn-video{flex:1;padding:13px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
+.sum-btn-copy{padding:13px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:10px;font-size:13px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -140,6 +168,7 @@ textarea::placeholder{color:#4b5563;}
     <button class="tab active" onclick="switchTab('upload')">📎 Upload File</button>
     <button class="tab" onclick="switchTab('text')">✍️ Type Text</button>
     <button class="tab" onclick="switchTab('jobs')">🎬 My Videos</button>
+    <button class="tab" onclick="switchTab('credits')">⚡ AI Credits</button>
   </div>
 
   <div class="panel active" id="panel-upload">
@@ -155,17 +184,69 @@ textarea::placeholder{color:#4b5563;}
       <span id="fsize" style="color:#6b7280;font-size:13px"></span>
       <button class="rm" onclick="clearFile()">✕</button>
     </div>
-    <button class="btn" id="uploadBtn" onclick="genFromFile()" disabled>🤖 Generate Avatar Video</button>
+    <div class="lang-row">
+      <label class="lang-label">🌍 Script Language:</label>
+      <select id="langSelect" class="lang-select">
+        <option value="English" selected>🇺🇸 English</option>
+        <option value="Hindi">🇮🇳 Hindi (हिंदी)</option>
+        <option value="Hinglish">🇮🇳 Hinglish (Mix)</option>
+        <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
+        <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
+        <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
+        <option value="Tamil">🇮🇳 Tamil (தமிழ்)</option>
+        <option value="Gujarati">🇮🇳 Gujarati (ગુજરાતી)</option>
+        <option value="Kannada">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+        <option value="Malayalam">🇮🇳 Malayalam (മലയാളം)</option>
+        <option value="Punjabi">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+        <option value="Urdu">🇮🇳 Urdu (اردو)</option>
+      </select>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-outline" id="summaryBtnFile" onclick="getSummaryFromFile()" disabled>📋 Script Summary</button>
+      <button class="btn" id="uploadBtn" onclick="genFromFile()" disabled>🎬 Generate Video</button>
+    </div>
   </div>
 
   <div class="panel" id="panel-text">
     <textarea id="rawText" placeholder="Type or paste your educational content here...&#10;&#10;Example: Explain Python while loops with examples, break and continue..."></textarea>
-    <button class="btn" onclick="genFromText()">🤖 Generate Avatar Video</button>
+    <div class="lang-row">
+      <label class="lang-label">🌍 Script Language:</label>
+      <select id="langSelect2" class="lang-select">
+        <option value="English" selected>🇺🇸 English</option>
+        <option value="Hindi">🇮🇳 Hindi (हिंदी)</option>
+        <option value="Hinglish">🇮🇳 Hinglish (Mix)</option>
+        <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
+        <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
+        <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
+        <option value="Tamil">🇮🇳 Tamil (தமிழ்)</option>
+        <option value="Gujarati">🇮🇳 Gujarati (ગુજરાતી)</option>
+        <option value="Kannada">🇮🇳 Kannada (ಕನ್ನಡ)</option>
+        <option value="Malayalam">🇮🇳 Malayalam (മലയാളം)</option>
+        <option value="Punjabi">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+        <option value="Urdu">🇮🇳 Urdu (اردو)</option>
+      </select>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-outline" onclick="getSummaryFromText()">📋 Script Summary</button>
+      <button class="btn" onclick="genFromText()">🎬 Generate Video</button>
+    </div>
   </div>
 
   <div class="panel" id="panel-jobs">
     <button class="refresh-btn" onclick="loadJobs()">🔄 Refresh</button>
     <div class="jobs-grid" id="jobsGrid"><div class="no-jobs">Loading...</div></div>
+  </div>
+
+  <!-- CREDITS PANEL -->
+  <div class="panel" id="panel-credits">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:18px;color:#a78bfa;">⚡ Live AI API Credits & Status</h3>
+      <button onclick="loadCredits()" style="background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;">🔄 Refresh</button>
+    </div>
+    <div id="creditsGrid" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="color:#6b7280;text-align:center;padding:30px;">Loading API status...</div>
+    </div>
+    <p style="color:#4b5563;font-size:12px;text-align:center;margin-top:16px;">ℹ️ Rotation order: Gemini → Groq → Cerebras → OpenRouter (auto-fallback)</p>
   </div>
 
   <div class="prog-card" id="progCard">
@@ -214,10 +295,11 @@ fetch('/health').then(r=>r.json()).then(d=>{
 });
 
 function switchTab(t) {
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['upload','text','jobs'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['upload','text','jobs','credits'][i]===t));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+t).classList.add('active');
   if(t==='jobs') loadJobs();
+  if(t==='credits') loadCredits();
 }
 function onFile(inp){
   const f=inp.files[0]; if(!f) return;
@@ -227,14 +309,14 @@ function onFile(inp){
   document.getElementById('fname').textContent=f.name;
   document.getElementById('fsize').textContent=(f.size/1024).toFixed(1)+' KB';
   document.getElementById('fsel').classList.add('show');
-  const btn=document.getElementById('uploadBtn');
-  btn.disabled=false; btn.textContent=`🤖 Generate from "${f.name}"`;
+  document.getElementById('uploadBtn').disabled=false;
+  document.getElementById('summaryBtnFile').disabled=false;
 }
 function clearFile(){
   document.getElementById('fi').value='';
   document.getElementById('fsel').classList.remove('show');
-  const btn=document.getElementById('uploadBtn');
-  btn.disabled=true; btn.textContent='🤖 Generate Avatar Video';
+  document.getElementById('uploadBtn').disabled=true;
+  document.getElementById('summaryBtnFile').disabled=true;
 }
 const dz=document.getElementById('dz');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='#7c3aed';});
@@ -243,13 +325,15 @@ dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';const 
 
 async function genFromFile(){
   const f=document.getElementById('fi').files[0]; if(!f) return;
-  const form=new FormData(); form.append('file',f);
+  const lang = document.getElementById('langSelect').value;
+  const form=new FormData(); form.append('file',f); form.append('script_language', lang);
   await run(()=>fetch('/generate-from-file',{method:'POST',body:form}));
 }
 async function genFromText(){
   const t=document.getElementById('rawText').value.trim();
+  const lang = document.getElementById('langSelect2').value;
   if(t.length<10){alert('At least 10 characters needed.');return;}
-  await run(()=>fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({raw_text:t})}));
+  await run(()=>fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({raw_text:t, script_language: lang})}));
 }
 
 async function run(fetchFn){
@@ -363,6 +447,149 @@ function show(id){document.getElementById(id).classList.add('show');}
 function hide(id){document.getElementById(id).classList.remove('show');}
 function hideAll(){['progCard','result','err'].forEach(hide);}
 function disableAll(v){document.querySelectorAll('.btn').forEach(b=>b.disabled=v);}
+
+async function loadCredits() {
+  const grid = document.getElementById('creditsGrid');
+  grid.innerHTML = '<div style="color:#6b7280;text-align:center;padding:30px;">🔄 Checking all AI APIs... (may take 5-10s)</div>';
+  try {
+    const d = await (await fetch('/credits')).json();
+    const colorMap = { green: { bg: 'rgba(16,185,129,.08)', border: 'rgba(16,185,129,.3)', badge: '#34d399', icon: '✅' }, orange: { bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.3)', badge: '#fbbf24', icon: '⚠️' }, red: { bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.3)', badge: '#f87171', icon: '❌' } };
+    grid.innerHTML = d.credits.map(c => {
+      const col = colorMap[c.color] || colorMap.green;
+      const barHTML = c.pct != null ? `<div style="margin-top:8px;background:rgba(255,255,255,.08);border-radius:99px;height:6px;overflow:hidden;"><div style="width:${c.pct}%;height:100%;background:${c.color==='green'?'#34d399':c.color==='orange'?'#fbbf24':'#f87171'};border-radius:99px;transition:width .5s;"></div></div><div style="font-size:11px;color:#6b7280;margin-top:4px;">${c.pct}% used</div>` : '';
+      return `<div style="background:${col.bg};border:1px solid ${col.border};border-radius:12px;padding:14px 18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:15px;font-weight:600;">${col.icon} ${c.name}</div>
+            <div style="font-size:12px;color:#9ca3af;margin-top:4px;">${c.info}</div>
+            ${barHTML}
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:16px;">
+            <div style="font-size:11px;color:#6b7280;">Limit</div>
+            <div style="font-size:12px;color:${col.badge};font-weight:600;">${c.limit}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    grid.innerHTML += `<div style="color:#4b5563;font-size:11px;text-align:right;margin-top:4px;">Last checked: ${new Date(d.timestamp).toLocaleTimeString('en-IN')}</div>`;
+  } catch(e) {
+    grid.innerHTML = '<div style="color:#f87171;text-align:center;padding:20px;">❌ Could not load credit status</div>';
+  }
+}
+
+</script>
+
+<!-- Summary Modal -->
+<div class="sum-overlay" id="sumOverlay" onclick="if(event.target===this) closeSummary()">
+  <div class="sum-modal">
+    <button class="sum-close" onclick="closeSummary()">✕ Close</button>
+    <h2>📋 Script Summary</h2>
+    <div class="sum-meta" id="sumMeta">AI-generated scene-by-scene breakdown</div>
+    <div class="sum-content" id="sumContent">Loading...</div>
+    <div class="sum-footer">
+      <button class="sum-btn-video" id="sumBtnVideo" onclick="convertSummaryToVideo()">🎬 Generate Full Video from This</button>
+      <button class="sum-btn-copy" onclick="copyMarkdown()">📋 Copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Summary helpers ────────────────────────────────────────────────────────────
+let _lastSummaryRawText   = '';
+let _lastSummaryLang      = 'English';
+let _lastSummaryFromFile  = false;
+let _lastSummaryFile      = null;
+
+function showSummary(markdown, rawText, lang, fromFile, file) {
+  _lastSummaryRawText  = rawText;
+  _lastSummaryLang     = lang;
+  _lastSummaryFromFile = fromFile;
+  _lastSummaryFile     = file;
+
+  // Render simple markdown → HTML (titles, bold, code, hr, blockquote)
+  let html = markdown
+    .replace(/^# (.+)/gm, '<h1>$1</h1>')
+    .replace(/^## (.+)/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)/gm, '<h3 style="color:#c4b5fd;margin:10px 0 3px;">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^---$/gm, '<hr style="border-color:rgba(255,255,255,.08);margin:10px 0;">')
+    .replace(/^> (.+)/gm, '<blockquote>$1</blockquote>')
+    .replace(/\n/g, '<br>');
+
+  document.getElementById('sumContent').innerHTML = html;
+  document.getElementById('sumOverlay').classList.add('show');
+}
+
+function closeSummary() {
+  document.getElementById('sumOverlay').classList.remove('show');
+}
+
+async function copyMarkdown() {
+  const text = document.getElementById('sumContent').innerText;
+  await navigator.clipboard.writeText(text).catch(()=>{});
+  const btn = document.querySelector('.sum-btn-copy');
+  btn.textContent = '✅ Copied!';
+  setTimeout(()=>btn.textContent='📋 Copy', 2000);
+}
+
+async function convertSummaryToVideo() {
+  closeSummary();
+  if (_lastSummaryFromFile && _lastSummaryFile) {
+    const form = new FormData();
+    form.append('file', _lastSummaryFile);
+    form.append('script_language', _lastSummaryLang);
+    await run(() => fetch('/generate-from-file', { method: 'POST', body: form }));
+  } else {
+    await run(() => fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: _lastSummaryRawText, script_language: _lastSummaryLang })
+    }));
+  }
+}
+
+async function getSummaryFromFile() {
+  const f = document.getElementById('fi').files[0]; if (!f) return;
+  const lang = document.getElementById('langSelect').value;
+  const btn = document.getElementById('summaryBtnFile');
+  btn.textContent = '⏳ Generating...'; btn.disabled = true;
+
+  const form = new FormData(); form.append('file', f); form.append('script_language', lang);
+  try {
+    const res = await fetch('/generate-script-from-file', { method: 'POST', body: form });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed');
+    showSummary(d.markdown, '', lang, true, f);
+  } catch (e) {
+    alert('❌ Summary failed: ' + e.message);
+  } finally {
+    btn.textContent = '📋 Script Summary'; btn.disabled = false;
+  }
+}
+
+async function getSummaryFromText() {
+  const t = document.getElementById('rawText').value.trim();
+  const lang = document.getElementById('langSelect2').value;
+  if (t.length < 10) { alert('At least 10 characters needed.'); return; }
+  const btns = document.querySelectorAll('#panel-text .btn-outline');
+  btns.forEach(b => { b.textContent = '⏳ Generating...'; b.disabled = true; });
+
+  try {
+    const res = await fetch('/generate-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: t, script_language: lang })
+    });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed');
+    showSummary(d.markdown, t, lang, false, null);
+  } catch (e) {
+    alert('❌ Summary failed: ' + e.message);
+  } finally {
+    btns.forEach(b => { b.textContent = '📋 Script Summary'; b.disabled = false; });
+  }
+}
 </script>
 </body>
 </html>

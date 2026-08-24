@@ -49,35 +49,60 @@ const TTS_VOICE = 'en-US-GuyNeural';  // Best free Microsoft Neural male voice
 //   engine         -- 'ElevenLabs' | 'Google TTS' | 'edge-tts'
 //   fallbackReason -- why we fell back (null if primary succeeded)
 // =============================================================================
-export async function generateSpeech(text, outputPath) {
+export async function generateSpeech(text, outputPath, targetLanguage = 'English') {
+  const dgKey  = process.env.DEEPGRAM_API_KEY?.trim();
   const elKey  = process.env.ELEVENLABS_API_KEY?.trim();
   const gcpKey = process.env.GOOGLE_TTS_API_KEY?.trim();
 
+  const isEnglish = (targetLanguage === 'English');
+
   // ─────────────────────────────────────────────────────────────────────────
-  // ATTEMPT 1: ElevenLabs
+  // ATTEMPT 1: Deepgram Aura (English only)
   // ─────────────────────────────────────────────────────────────────────────
-  if (elKey && elKey.length > 10) {
+  if (isEnglish && dgKey && dgKey.length > 10) {
     try {
-      console.log('   🎙️  [Voice] Trying ElevenLabs...');
-      await _elevenLabs(text, outputPath, elKey);
-      console.log('   ✅  [Voice] ElevenLabs succeeded');
-      return { engine: 'ElevenLabs', fallbackReason: null };
+      console.log('   🎙️  [Voice] Trying Deepgram Aura...');
+      await _deepgram(text, outputPath, dgKey);
+      console.log('   ✅  [Voice] Deepgram succeeded');
+      return { engine: 'Deepgram', fallbackReason: null };
 
     } catch (err) {
-      const reason = classifyError(err, 'ElevenLabs');
-      console.warn(`   ⚠️  [Voice] ElevenLabs FAILED — ${reason}`);
+      const reason = classifyError(err, 'Deepgram');
+      console.warn(`   ⚠️  [Voice] Deepgram FAILED — ${reason}`);
       console.warn(`   ↪️  Switching to next fallback...`);
-      // Delete partial file if created
       await safeDelete(outputPath);
     }
-  } else {
-    console.log('   ℹ️  [Voice] ElevenLabs key not set — skipping');
+  } else if (isEnglish) {
+    console.log('   ℹ️  [Voice] Deepgram key not set — skipping');
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // ATTEMPT 2: Google Cloud TTS
+  // ATTEMPT 2: ElevenLabs (English only for our hardcoded voice, with rotation)
   // ─────────────────────────────────────────────────────────────────────────
-  if (gcpKey && gcpKey.length > 10) {
+  const elKeys = elKey ? elKey.split(',').map(k => k.trim()).filter(k => k.length > 10) : [];
+  if (isEnglish && elKeys.length > 0) {
+    let elSuccess = false;
+    for (let i = 0; i < elKeys.length; i++) {
+      try {
+        console.log(`   🎙️  [Voice] Trying ElevenLabs (Key ${i+1}/${elKeys.length})...`);
+        await _elevenLabs(text, outputPath, elKeys[i]);
+        console.log('   ✅  [Voice] ElevenLabs succeeded');
+        return { engine: 'ElevenLabs', fallbackReason: null };
+      } catch (err) {
+        const reason = classifyError(err, 'ElevenLabs');
+        console.warn(`   ⚠️  [Voice] ElevenLabs Key ${i+1} FAILED — ${reason}`);
+        await safeDelete(outputPath);
+      }
+    }
+    console.warn(`   ↪️  All ElevenLabs keys exhausted. Switching to next fallback...`);
+  } else if (isEnglish) {
+    console.log('   ℹ️  [Voice] ElevenLabs keys not set — skipping');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ATTEMPT 3: Google Cloud TTS (English only for our hardcoded voice)
+  // ─────────────────────────────────────────────────────────────────────────
+  if (isEnglish && gcpKey && gcpKey.length > 10) {
     try {
       console.log('   🎙️  [Voice] Trying Google Cloud TTS...');
       await _googleTTS(text, outputPath, gcpKey);
@@ -90,20 +115,20 @@ export async function generateSpeech(text, outputPath) {
       console.warn(`   ↪️  Falling back to edge-tts (always free)...`);
       await safeDelete(outputPath);
     }
-  } else {
+  } else if (isEnglish) {
     console.log('   ℹ️  [Voice] Google TTS key not set — skipping');
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // ATTEMPT 3: edge-tts (ALWAYS works, no API key, no limits)
+  // ATTEMPT 4: edge-tts (ALWAYS works, supports all languages natively)
   // ─────────────────────────────────────────────────────────────────────────
   try {
-    console.log('   🎙️  [Voice] Using edge-tts (free fallback)...');
-    await _edgeTTS(text, outputPath);
+    console.log(`   🎙️  [Voice] Using edge-tts (${targetLanguage})...`);
+    await _edgeTTS(text, outputPath, targetLanguage);
     console.log('   ✅  [Voice] edge-tts succeeded');
     return {
       engine:         'edge-tts',
-      fallbackReason: 'Primary AI voices failed or not configured',
+      fallbackReason: isEnglish ? 'Primary AI voices failed or not configured' : `Native ${targetLanguage} voice used`,
     };
   } catch (err) {
     // This should almost never happen
@@ -115,15 +140,48 @@ export async function generateSpeech(text, outputPath) {
 // getVoiceStatus -- Used by /health endpoint
 // =============================================================================
 export function getVoiceStatus() {
+  const dgActive = !!(process.env.DEEPGRAM_API_KEY?.trim().length > 10);
   const elActive  = !!(process.env.ELEVENLABS_API_KEY?.trim().length > 10);
   const gcpActive = !!(process.env.GOOGLE_TTS_API_KEY?.trim().length > 10);
 
   let activeEngine = 'edge-tts (fallback)';
-  if (elActive && gcpActive)  activeEngine = 'ElevenLabs → Google TTS → edge-tts';
+  if (dgActive) activeEngine = 'Deepgram → ElevenLabs → edge-tts';
+  else if (elActive && gcpActive)  activeEngine = 'ElevenLabs → Google TTS → edge-tts';
   else if (elActive)           activeEngine = 'ElevenLabs → edge-tts';
   else if (gcpActive)          activeEngine = 'Google TTS → edge-tts';
 
-  return { elevenlabs: elActive, googleTTS: gcpActive, edgeTTS: true, activeEngine };
+  return { deepgram: dgActive, elevenlabs: elActive, googleTTS: gcpActive, edgeTTS: true, activeEngine };
+}
+
+// =============================================================================
+// _deepgram -- Deepgram Aura REST call
+// =============================================================================
+async function _deepgram(text, outputPath, apiKey) {
+  let res;
+  try {
+    res = await fetch(
+      'https://api.deepgram.com/v1/speak?model=aura-asteria-en',
+      {
+        method:  'POST',
+        headers: {
+          'Authorization': `Token ${apiKey}`,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify({ text }),
+        signal: AbortSignal.timeout(30_000),
+      }
+    );
+  } catch (netErr) {
+    throw new Error(`Network error: ${netErr.message}`);
+  }
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => 'Unknown error');
+    throw new Error(`HTTP ${res.status}: ${errText}`);
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  await fs.writeFile(outputPath, Buffer.from(arrayBuffer));
 }
 
 // =============================================================================
@@ -214,14 +272,34 @@ async function _googleTTS(text, outputPath, apiKey) {
 // =============================================================================
 // _edgeTTS -- Microsoft Neural TTS (free, always available)
 // =============================================================================
-async function _edgeTTS(text, outputPath) {
+function getEdgeVoice(lang) {
+  const map = {
+    'English': 'en-US-GuyNeural',
+    'Hindi': 'hi-IN-MadhurNeural',
+    'Hinglish': 'hi-IN-MadhurNeural',
+    'Bengali': 'bn-IN-BashkarNeural',
+    'Marathi': 'mr-IN-ManoharNeural',
+    'Telugu': 'te-IN-MohanNeural',
+    'Tamil': 'ta-IN-ValluvarNeural',
+    'Gujarati': 'gu-IN-NiranjanNeural',
+    'Kannada': 'kn-IN-GaganNeural',
+    'Malayalam': 'ml-IN-MidhunNeural',
+    'Punjabi': 'pa-IN-OjasNeural',
+    'Urdu': 'ur-IN-SalmanNeural'
+  };
+  return map[lang] || 'en-US-GuyNeural';
+}
+
+async function _edgeTTS(text, outputPath, targetLanguage = 'English') {
+  const voice = getEdgeVoice(targetLanguage);
+  
+  // Do NOT strip non-ASCII characters anymore, because other languages need them!
   const safeText = text
     .replace(/\n/g, ' ')
     .replace(/"/g, "'")
-    .replace(/[^\x20-\x7E]/g, '')
     .trim();
 
-  const cmd = `"${TTS_CMD}" --voice "${TTS_VOICE}" --text "${safeText}" --write-media "${outputPath}"`;
+  const cmd = `"${TTS_CMD}" --voice "${voice}" --text "${safeText}" --write-media "${outputPath}"`;
   await execAsync(cmd, { timeout: 60_000 });
 }
 

@@ -1,14 +1,15 @@
-import { Composition, Sequence, useVideoConfig, interpolate, Audio } from 'remotion';
+import { Composition, Sequence, useVideoConfig, useCurrentFrame, interpolate, Audio, staticFile } from 'remotion';
 import IntroScene from './scenes/IntroScene';
 import CodeScene from './scenes/CodeScene';
 import VisualScene from './scenes/VisualScene';
-import AvatarScene from './scenes/AvatarScene';
+import { AvatarScene } from './scenes/AvatarScene';
 import { ExplainerScene } from './scenes/ExplainerScene';
 import { ComparisonScene } from './scenes/ComparisonScene';
 import { FlowchartScene } from './scenes/FlowchartScene';
 
 const SceneFade = ({ children, duration = 18 }) => {
-  const { frame, fps, durationInFrames } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
+  const frame = useCurrentFrame();
   const opacity = interpolate(
     frame,
     [0, duration, durationInFrames - duration, durationInFrames],
@@ -52,11 +53,11 @@ export const V3VideoEngine = ({ script, audioFiles, avatarEngine }) => {
             <SceneFade duration={20}>
               {/* Only full-screen avatar on intro. For other scenes, we skip avatar or could add it in corner */}
               {scene.type === 'intro' ? (
-                <AvatarScene text={scene.text} audioDuration={durationSec} subtitleWords={audioData?.subtitleWords} audioFrames={Math.round(durationSec * fps)} />
+                <AvatarScene scene={{ ...scene, audioDuration: durationSec, subtitleWords: audioData?.subtitleWords ?? [] }} sceneIndex={index} sceneDurationFrames={sceneDurationFrames} />
               ) : (
                 renderInnerScene()
               )}
-              {audioData?.path && <Audio src={audioData.path} />}
+              {audioData?.path && <Audio src={staticFile(audioData.path)} />}
             </SceneFade>
           </Sequence>
         );
