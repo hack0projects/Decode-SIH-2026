@@ -76,7 +76,7 @@ Each model failure is caught and the next model is tried seamlessly. The `extrac
 ElevenLabs has a per-key character limit. The system accepts **multiple comma-separated keys** in `.env` and rotates through them automatically:
 
 ```
-ELEVENLABS_API_KEY=key1,key2,key3   # ~30,000 chars/month combined
+ELEVENLABS_API_KEY=key1,key2,key3,key4   # ~40,000 chars/month combined
 ```
 
 If `key1` hits quota mid-generation → instantly switches to `key2` → then `key3` → then falls back to Edge-TTS. The video render **never fails** due to a voice API limit.
@@ -196,3 +196,4 @@ SIH VIDEO GENERATION/
 | V3.3 | Aug 2026 | ElevenLabs multi-key rotation, Deepgram key update |
 | V3.4 | Aug 2026 | Full native script translation (headings, bullets, all UI text) |
 | V3.5 | Aug 2026 | Fixed Groq model name, full automated token-completion rotation |
+| V3.6 | Aug 2026 | Added 4th ElevenLabs key — 40,000 combined chars/month total |
