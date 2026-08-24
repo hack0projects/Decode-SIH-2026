@@ -215,17 +215,35 @@ app.get('/credits', async (_req, res) => {
     results.push({ name: 'Deepgram (Voice)', status: 'error', info: e.message?.slice(0,60), limit: '$200 Free Credit', color: 'red' });
   }
 
-  // 6. ElevenLabs — check subscription
+  // 6. ElevenLabs — check subscription (supports comma-separated multi-keys)
   try {
-    const el = await fetch('https://api.elevenlabs.io/v1/user/subscription', { headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY } });
-    if (el.ok) {
-      const d = await el.json();
-      const used = d.character_count ?? 0;
-      const limit = d.character_limit ?? 10000;
-      const pct = ((used / limit) * 100).toFixed(1);
-      results.push({ name: 'ElevenLabs (Voice)', status: pct > 90 ? 'warning' : 'ok', info: used.toLocaleString() + ' / ' + limit.toLocaleString() + ' chars used (' + pct + '%)', limit: limit.toLocaleString() + ' chars/month', color: pct > 90 ? 'orange' : 'green', used, total: limit, pct: parseFloat(pct) });
+    const elKeys = (process.env.ELEVENLABS_API_KEY || '').split(',').map(k => k.trim()).filter(k => k.length > 10);
+    if (elKeys.length > 0) {
+      let totalUsed = 0;
+      let totalLimit = 0;
+      let anyOk = false;
+      let lastStatus = null;
+      
+      for (const key of elKeys) {
+        const el = await fetch('https://api.elevenlabs.io/v1/user/subscription', { headers: { 'xi-api-key': key } });
+        if (el.ok) {
+          anyOk = true;
+          const d = await el.json();
+          totalUsed += (d.character_count ?? 0);
+          totalLimit += (d.character_limit ?? 10000);
+        } else {
+          lastStatus = el.status;
+        }
+      }
+
+      if (anyOk) {
+        const pct = ((totalUsed / totalLimit) * 100).toFixed(1);
+        results.push({ name: 'ElevenLabs (Voice)', status: pct > 90 ? 'warning' : 'ok', info: totalUsed.toLocaleString() + ' / ' + totalLimit.toLocaleString() + ' chars used (' + pct + '%)', limit: totalLimit.toLocaleString() + ' chars/month', color: pct > 90 ? 'orange' : 'green', used: totalUsed, total: totalLimit, pct: parseFloat(pct) });
+      } else {
+        results.push({ name: 'ElevenLabs (Voice)', status: 'error', info: 'All keys failed (Last API returned ' + lastStatus + ')', limit: (elKeys.length * 10000).toLocaleString() + ' chars/month', color: 'red' });
+      }
     } else {
-      results.push({ name: 'ElevenLabs (Voice)', status: 'error', info: 'API returned ' + el.status, limit: '10,000 chars/month', color: 'red' });
+      results.push({ name: 'ElevenLabs (Voice)', status: 'error', info: 'No valid API keys found in .env', limit: '10,000 chars/month', color: 'red' });
     }
   } catch(e) {
     results.push({ name: 'ElevenLabs (Voice)', status: 'error', info: e.message?.slice(0,60), limit: '10,000 chars/month', color: 'red' });
@@ -251,7 +269,11 @@ Your job is to READ the full INPUT TEXT thoroughly and convert it into a deeply 
 - Structures content progressively (simple → complex → application)
 
 CRITICAL TRANSLATION RULE:
-All spoken text (the "text" field) MUST be in **${targetLanguage}**. UI labels (heading, bullets) can stay in English.
+The ENTIRE script (including "title", "summary", "keyTerms", "heading", "bullets", "steps", "points", and "text" narration) MUST be written in the native script of **${targetLanguage}**.
+- If ${targetLanguage} is Hindi, write EVERYTHING in Devanagari script.
+- If ${targetLanguage} is Bengali, write EVERYTHING in Bengali script.
+- Do NOT use English letters for regional languages (e.g. no Hinglish/Romanized text unless explicitly requested).
+- Code blocks (the programming syntax) stay in English, but the comments inside the code MUST be translated to ${targetLanguage}.
 
 OUTPUT RULES:
 1. ONLY raw JSON. No markdown, no backticks, no explanation.
@@ -314,7 +336,11 @@ GOAL: Create a BALANCED, comprehensive animated explainer video that is 4-5 minu
 - Like a perfect college lecture summary — not too brief, not too long
 
 CRITICAL TRANSLATION RULE:
-All "text" narration fields MUST be in **${targetLanguage}**. UI labels (heading, bullets) stay in English.
+The ENTIRE script (including "title", "heading", "bullets", "steps", "points", and "text" narration) MUST be written in the native script of **${targetLanguage}**.
+- If ${targetLanguage} is Hindi, write EVERYTHING in Devanagari script.
+- If ${targetLanguage} is Bengali, write EVERYTHING in Bengali script.
+- Do NOT use English letters for regional languages (e.g. no Hinglish/Romanized text unless explicitly requested).
+- Code blocks (the programming syntax) stay in English, but the comments inside the code MUST be translated to ${targetLanguage}.
 
 OUTPUT RULES:
 1. ONLY raw JSON. No markdown, no backticks, no explanation.
