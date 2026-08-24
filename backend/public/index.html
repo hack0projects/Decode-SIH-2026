@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeSeekho — AI Video Generator</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#07071a;color:#fff;min-height:100vh;}
+
+  /* ── HEADER ── */
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(124,58,237,.3);backdrop-filter:blur(10px);position:sticky;top:0;z-index:100;}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .logo h1{font-size:22px;font-weight:700;background:linear-gradient(90deg,#a78bfa,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .logo p{font-size:12px;color:#6b7280;margin-top:1px;}
+  .badge{background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;padding:5px 14px;border-radius:20px;font-size:13px;}
+
+  /* ── MAIN ── */
+  main{max-width:900px;margin:40px auto;padding:0 20px;}
+  h2{font-size:28px;font-weight:700;text-align:center;margin-bottom:8px;}
+  .subtitle{text-align:center;color:#6b7280;margin-bottom:36px;font-size:15px;}
+
+  /* ── TABS ── */
+  .tabs{display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:12px;padding:4px;margin-bottom:28px;}
+  .tab{flex:1;padding:11px;border:none;background:transparent;color:#9ca3af;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500;transition:.2s;}
+  .tab.active{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;box-shadow:0 4px 15px rgba(124,58,237,.4);}
+  .tab:hover:not(.active){background:rgba(255,255,255,.08);color:#fff;}
+
+  /* ── PANELS ── */
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* ── TEXT INPUT ── */
+  textarea{width:100%;height:160px;background:rgba(255,255,255,.05);border:1px solid rgba(124,58,237,.3);border-radius:12px;color:#fff;padding:16px;font-size:14px;resize:vertical;outline:none;transition:.2s;}
+  textarea:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15);}
+  textarea::placeholder{color:#4b5563;}
+
+  /* ── DROP ZONE ── */
+  .dropzone{border:2px dashed rgba(124,58,237,.4);border-radius:16px;padding:50px 20px;text-align:center;cursor:pointer;transition:.3s;background:rgba(124,58,237,.04);position:relative;}
+  .dropzone:hover,.dropzone.drag-over{border-color:#7c3aed;background:rgba(124,58,237,.1);}
+  .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .dropzone .cloud{font-size:52px;margin-bottom:14px;}
+  .dropzone h3{font-size:17px;font-weight:600;margin-bottom:6px;}
+  .dropzone p{color:#6b7280;font-size:13px;margin-bottom:20px;}
+  .file-types{display:flex;justify-content:center;gap:14px;margin-top:4px;}
+  .ft{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .ft-icon{width:52px;height:60px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;font-family:monospace;}
+  .ft-ppt{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;}
+  .ft-pdf{background:linear-gradient(135deg,#ea580c,#c2410c);color:#fff;}
+  .ft-txt{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;}
+  .ft span{font-size:11px;color:#6b7280;}
+  .file-selected{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.5);border-radius:10px;padding:12px 16px;margin-top:16px;display:none;align-items:center;gap:10px;}
+  .file-selected.show{display:flex;}
+  .file-selected .fname{font-size:14px;font-weight:500;flex:1;}
+  .file-selected .fsize{color:#6b7280;font-size:13px;}
+  .remove-file{background:rgba(239,68,68,.2);border:none;color:#f87171;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;}
+
+  /* ── BUTTON ── */
+  .btn{width:100%;padding:15px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;margin-top:16px;transition:.2s;letter-spacing:.3px;}
+  .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 25px rgba(124,58,237,.5);}
+  .btn:disabled{background:linear-gradient(135deg,#374151,#1f2937);cursor:not-allowed;transform:none;}
+
+  /* ── PROGRESS ── */
+  .progress-card{background:rgba(255,255,255,.05);border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:22px;margin-top:24px;display:none;}
+  .progress-card.show{display:block;}
+  .progress-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+  .step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.03);}
+  .step.done{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);}
+  .step.active{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);}
+  .step.waiting{opacity:.4;}
+  .step-icon{font-size:20px;width:32px;text-align:center;}
+  .step-text{flex:1;font-size:14px;}
+  .step-badge{font-size:12px;padding:2px 10px;border-radius:12px;}
+  .step.done .step-badge{background:rgba(16,185,129,.2);color:#34d399;}
+  .step.active .step-badge{background:rgba(124,58,237,.3);color:#a78bfa;}
+  .step.waiting .step-badge{background:rgba(255,255,255,.05);color:#4b5563;}
+  .progress-bar-wrap{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
+  .progress-bar{height:100%;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:99px;width:0%;transition:width .5s ease;}
+
+  /* ── RESULT ── */
+  .result-card{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);border-radius:14px;padding:24px;margin-top:24px;display:none;}
+  .result-card.show{display:block;}
+  .result-card h3{color:#34d399;font-size:18px;margin-bottom:16px;}
+  .result-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+  .meta-item{background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;}
+  .meta-item label{font-size:11px;color:#6b7280;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+  .meta-item span{font-size:15px;font-weight:600;}
+  .watch-btn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,#059669,#047857);color:#fff;border-radius:10px;text-align:center;text-decoration:none;font-weight:600;font-size:15px;margin-bottom:10px;transition:.2s;}
+  .watch-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(5,150,105,.4);}
+  .copy-url{width:100%;padding:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:10px;cursor:pointer;font-size:13px;}
+  .copy-url:hover{background:rgba(255,255,255,.08);}
+
+  /* ── ERROR ── */
+  .error-card{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:14px;padding:20px;margin-top:24px;display:none;}
+  .error-card.show{display:block;}
+  .error-card h3{color:#f87171;margin-bottom:8px;}
+  .error-card p{color:#fca5a5;font-size:14px;}
+
+  /* ── JOBS ── */
+  .jobs-grid{display:flex;flex-direction:column;gap:12px;}
+  .job-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;transition:.2s;}
+  .job-card:hover{border-color:rgba(124,58,237,.4);background:rgba(124,58,237,.05);}
+  .job-thumb{width:60px;height:42px;background:linear-gradient(135deg,#1e1e3f,#2d2d5e);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .job-info{flex:1;}
+  .job-title{font-size:15px;font-weight:600;margin-bottom:3px;}
+  .job-meta{font-size:12px;color:#6b7280;}
+  .job-lang{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-left:8px;}
+  .lang-python{background:rgba(59,130,246,.2);color:#93c5fd;}
+  .lang-cpp{background:rgba(239,68,68,.2);color:#fca5a5;}
+  .job-watch{padding:8px 16px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;border-radius:8px;text-decoration:none;font-size:13px;white-space:nowrap;}
+  .job-watch:hover{background:rgba(124,58,237,.35);}
+  .no-jobs{text-align:center;color:#4b5563;padding:40px;font-size:15px;}
+  .refresh-btn{display:block;width:fit-content;margin:0 auto 20px;padding:9px 22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:8px;cursor:pointer;font-size:13px;}
+  .refresh-btn:hover{background:rgba(255,255,255,.08);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎬</div>
+    <div>
+      <h1>CodeSeekho</h1>
+      <p>AI Video Generator</p>
+    </div>
+  </div>
+  <div class="badge">✨ Powered by Gemini 3.6 Flash</div>
+</header>
+
+<main>
+  <h2>Turn Your Content Into Videos</h2>
+  <p class="subtitle">Upload a PPT, PDF, or TXT file — Gemini AI converts it into a full educational video</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('upload')">📎 Upload File</button>
+    <button class="tab" onclick="switchTab('text')">✍️ Type Text</button>
+    <button class="tab" onclick="switchTab('jobs')">🎬 My Videos</button>
+  </div>
+
+  <!-- ── UPLOAD PANEL ── -->
+  <div class="panel active" id="panel-upload">
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept=".pptx,.ppt,.pdf,.txt,.md" onchange="onFileSelected(this)">
+      <div class="cloud">☁️</div>
+      <h3>Drag & Drop or Click to Browse</h3>
+      <p>Supported formats: PPT, PPTX, PDF, TXT, MD &nbsp;·&nbsp; Max 50 MB</p>
+      <div class="file-types">
+        <div class="ft"><div class="ft-icon ft-ppt">P</div><span>PPTX / PPT</span></div>
+        <div class="ft"><div class="ft-icon ft-pdf">PDF</div><span>PDF</span></div>
+        <div class="ft"><div class="ft-icon ft-txt">TXT</div><span>TXT / MD</span></div>
+      </div>
+    </div>
+
+    <div class="file-selected" id="fileSelected">
+      <span style="font-size:24px" id="fileIcon">📄</span>
+      <span class="fname" id="fileName"></span>
+      <span class="fsize" id="fileSize"></span>
+      <button class="remove-file" onclick="clearFile()">✕ Remove</button>
+    </div>
+
+    <button class="btn" id="uploadBtn" onclick="generateFromFile()" disabled>
+      🚀 Generate Video from File
+    </button>
+  </div>
+
+  <!-- ── TEXT PANEL ── -->
+  <div class="panel" id="panel-text">
+    <textarea id="rawText" placeholder="Paste your educational content here...
+
+Example: Explain Python for loops with syntax, examples, break and continue statements. Show how to iterate over lists and use range()."></textarea>
+    <button class="btn" onclick="generateFromText()">🚀 Generate Video from Text</button>
+  </div>
+
+  <!-- ── JOBS PANEL ── -->
+  <div class="panel" id="panel-jobs">
+    <button class="refresh-btn" onclick="loadJobs()">🔄 Refresh</button>
+    <div class="jobs-grid" id="jobsGrid">
+      <div class="no-jobs">Loading your videos...</div>
+    </div>
+  </div>
+
+  <!-- ── PROGRESS ── -->
+  <div class="progress-card" id="progressCard">
+    <div class="progress-steps">
+      <div class="step waiting" id="step1">
+        <span class="step-icon">🤖</span>
+        <span class="step-text">Gemini AI — Reading content & building script</span>
+        <span class="step-badge">Waiting</span>
+      </div>
+      <div class="step waiting" id="step2">
+        <span class="step-icon">🔊</span>
+        <span class="step-text">edge-tts — Generating voice narration</span>
+        <span class="step-badge">Waiting</span>
+      </div>
+      <div class="step waiting" id="step3">
+        <span class="step-icon">🎥</span>
+        <span class="step-text">Remotion — Rendering HD video frames</span>
+        <span class="step-badge">Waiting</span>
+      </div>
+      <div class="step waiting" id="step4">
+        <span class="step-icon">☁️</span>
+        <span class="step-text">Supabase — Uploading to cloud storage</span>
+        <span class="step-badge">Waiting</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <p style="text-align:center;margin-top:12px;color:#6b7280;font-size:13px" id="progressText">Starting pipeline...</p>
+  </div>
+
+  <!-- ── RESULT ── -->
+  <div class="result-card" id="resultCard">
+    <h3>✅ Video Generated Successfully!</h3>
+    <div class="result-meta">
+      <div class="meta-item"><label>Title</label><span id="rTitle">—</span></div>
+      <div class="meta-item"><label>Language</label><span id="rLang">—</span></div>
+      <div class="meta-item"><label>Total Scenes</label><span id="rScenes">—</span></div>
+      <div class="meta-item"><label>Audio Files</label><span id="rAudio">—</span></div>
+    </div>
+    <a href="#" target="_blank" class="watch-btn" id="watchBtn">▶️ Watch Video</a>
+    <button class="copy-url" onclick="copyUrl()">📋 Copy Video URL</button>
+  </div>
+
+  <!-- ── ERROR ── -->
+  <div class="error-card" id="errorCard">
+    <h3>❌ Generation Failed</h3>
+    <p id="errorMsg">—</p>
+  </div>
+</main>
+
+<script>
+let currentVideoUrl = '';
+let currentTab = 'upload';
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['upload','text','jobs'][i] === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'jobs') loadJobs();
+}
+
+// ── File handling ─────────────────────────────────────────────────────────────
+function onFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const icons = { pptx:'📊', ppt:'📊', pdf:'📄', txt:'📝', md:'📝' };
+  document.getElementById('fileIcon').textContent = icons[ext] || '📁';
+  document.getElementById('fileName').textContent  = file.name;
+  document.getElementById('fileSize').textContent  = formatSize(file.size);
+  document.getElementById('fileSelected').classList.add('show');
+  document.getElementById('uploadBtn').disabled = false;
+  document.getElementById('uploadBtn').textContent = `🚀 Generate Video from "${file.name}"`;
+}
+
+function clearFile() {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileSelected').classList.remove('show');
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('uploadBtn').textContent = '🚀 Generate Video from File';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+// Drag & drop
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) { const inp = document.getElementById('fileInput'); inp.files = e.dataTransfer.files; onFileSelected(inp); }
+});
+
+// ── Generate from file ────────────────────────────────────────────────────────
+async function generateFromFile() {
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  await runPipeline(() => fetch('/generate-from-file', { method:'POST', body: form }));
+}
+
+// ── Generate from text ────────────────────────────────────────────────────────
+async function generateFromText() {
+  const text = document.getElementById('rawText').value.trim();
+  if (text.length < 10) { alert('Please enter at least 10 characters.'); return; }
+  await runPipeline(() => fetch('/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw_text: text })
+  }));
+}
+
+// ── Pipeline runner ───────────────────────────────────────────────────────────
+async function runPipeline(fetchFn) {
+  hideAll();
+  show('progressCard');
+  disableButtons(true);
+
+  const steps = [
+    { el: 'step1', label: '🤖 Gemini AI thinking...', pct: 10 },
+    { el: 'step2', label: '🔊 Generating voice...', pct: 35 },
+    { el: 'step3', label: '🎥 Rendering video (longest step)...', pct: 55 },
+    { el: 'step4', label: '☁️ Uploading to cloud...', pct: 90 },
+  ];
+
+  let stepIdx = 0;
+  const timer = setInterval(() => {
+    if (stepIdx < steps.length) {
+      if (stepIdx > 0) setStep(steps[stepIdx-1].el, 'done', '✓ Done');
+      setStep(steps[stepIdx].el, 'active', 'Running...');
+      setProgress(steps[stepIdx].pct, steps[stepIdx].label);
+      stepIdx++;
+    }
+  }, 18000);
+
+  try {
+    const res  = await fetchFn();
+    const data = await res.json();
+    clearInterval(timer);
+
+    if (data.success) {
+      steps.forEach(s => setStep(s.el, 'done', '✓ Done'));
+      setProgress(100, 'Complete!');
+      currentVideoUrl = data.videoUrl;
+      document.getElementById('rTitle').textContent  = data.title;
+      document.getElementById('rLang').textContent   = data.language;
+      document.getElementById('rScenes').textContent = data.sceneCount + ' scenes';
+      document.getElementById('rAudio').textContent  = data.audioCount + ' files';
+      document.getElementById('watchBtn').href = data.videoUrl;
+      setTimeout(() => { hide('progressCard'); show('resultCard'); }, 800);
+    } else {
+      clearInterval(timer);
+      document.getElementById('errorMsg').textContent = data.error || 'Unknown error.';
+      hide('progressCard'); show('errorCard');
+    }
+  } catch(err) {
+    clearInterval(timer);
+    document.getElementById('errorMsg').textContent = err.message + ' — Is the server running on port 3001?';
+    hide('progressCard'); show('errorCard');
+  }
+
+  disableButtons(false);
+}
+
+function setStep(id, state, badge) {
+  const el = document.getElementById(id);
+  el.className = 'step ' + state;
+  el.querySelector('.step-badge').textContent = badge;
+}
+function setProgress(pct, text) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+}
+
+// ── Jobs list ─────────────────────────────────────────────────────────────────
+async function loadJobs() {
+  const grid = document.getElementById('jobsGrid');
+  grid.innerHTML = '<div class="no-jobs">⏳ Loading...</div>';
+  try {
+    const res  = await fetch('/jobs');
+    const data = await res.json();
+    if (!data.jobs?.length) { grid.innerHTML = '<div class="no-jobs">No videos yet. Generate your first one!</div>'; return; }
+    grid.innerHTML = data.jobs.map(j => `
+      <div class="job-card">
+        <div class="job-thumb">🎬</div>
+        <div class="job-info">
+          <div class="job-title">
+            ${j.title}
+            <span class="job-lang ${j.language==='Python'?'lang-python':'lang-cpp'}">${j.language}</span>
+          </div>
+          <div class="job-meta">${j.scene_count} scenes &nbsp;·&nbsp; ${new Date(j.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</div>
+        </div>
+        <a href="${j.video_url}" target="_blank" class="job-watch">▶ Watch</a>
+      </div>`).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="no-jobs">Could not load jobs. Is the server running?</div>';
+  }
+}
+
+function copyUrl() {
+  navigator.clipboard.writeText(currentVideoUrl).then(() => {
+    const btn = document.querySelector('.copy-url');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Video URL', 2000);
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.add('show'); }
+function hide(id) { document.getElementById(id).classList.remove('show'); }
+function hideAll() { ['progressCard','resultCard','errorCard'].forEach(hide); }
+function disableButtons(v) {
+  document.getElementById('uploadBtn').disabled = v;
+  document.querySelectorAll('.btn').forEach(b => b.disabled = v);
+}
+</script>
+</body>
+</html>

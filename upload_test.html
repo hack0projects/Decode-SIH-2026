@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CodeSeekho — File to Video</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 60px auto; padding: 20px; background: #0f0f1a; color: #fff; }
+    h1 { color: #7c3aed; }
+    .card { background: #1e1e2e; border-radius: 12px; padding: 30px; margin-top: 20px; }
+    label { display: block; margin-bottom: 8px; color: #a0a0b0; }
+    input[type=file] { width: 100%; padding: 10px; background: #2a2a3e; border: 1px solid #7c3aed; border-radius: 8px; color: #fff; margin-bottom: 20px; }
+    button { background: #7c3aed; color: #fff; border: none; padding: 14px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
+    button:hover { background: #6d28d9; }
+    button:disabled { background: #444; cursor: not-allowed; }
+    #status { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; }
+    .success { background: #14532d; border: 1px solid #16a34a; }
+    .error   { background: #450a0a; border: 1px solid #dc2626; }
+    .loading { background: #1e3a5f; border: 1px solid #3b82f6; }
+    a { color: #7c3aed; }
+    .info { font-size: 13px; color: #6b7280; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🎬 CodeSeekho</h1>
+  <p style="color:#a0a0b0">Upload a PPT, PDF, or TXT file — get an AI-generated educational video.</p>
+
+  <div class="card">
+    <form id="uploadForm">
+      <label>Select your file (.pptx / .pdf / .txt / .md)</label>
+      <input type="file" id="fileInput" accept=".pptx,.ppt,.pdf,.txt,.md" required>
+      <button type="submit" id="btn">🚀 Generate Video</button>
+      <p class="info">⏱️ Takes 2–4 minutes (Gemini AI + Remotion rendering)</p>
+    </form>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const file   = document.getElementById('fileInput').files[0];
+      const btn    = document.getElementById('btn');
+      const status = document.getElementById('status');
+
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      btn.disabled    = true;
+      btn.textContent = '⏳ Generating... (please wait 2-4 min)';
+      status.style.display = 'block';
+      status.className     = 'loading';
+      status.innerHTML     = `📤 Uploading <b>${file.name}</b>...<br>🤖 Gemini is reading your file...<br>🎥 Remotion will render the video next.`;
+
+      try {
+        const res  = await fetch('http://localhost:3001/generate-from-file', {
+          method: 'POST', body: formData,
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          status.className = 'success';
+          status.innerHTML = `
+            ✅ <b>Video Generated!</b><br><br>
+            📌 <b>Title:</b> ${data.title}<br>
+            🌐 <b>Language:</b> ${data.language}<br>
+            🎬 <b>Scenes:</b> ${data.sceneCount}<br>
+            📁 <b>Source:</b> ${data.sourceFile}<br><br>
+            <a href="${data.videoUrl}" target="_blank">▶️ Watch Video →</a>
+          `;
+        } else {
+          status.className = 'error';
+          status.innerHTML = `❌ Error: ${data.error}`;
+        }
+      } catch (err) {
+        status.className = 'error';
+        status.innerHTML = `❌ ${err.message}<br><small>Make sure the server is running on port 3001.</small>`;
+      }
+
+      btn.disabled    = false;
+      btn.textContent = '🚀 Generate Video';
+    });
+  </script>
+</body>
+</html>

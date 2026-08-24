@@ -1,0 +1,1864 @@
+{
+  "title": "Python Programming Masterclass: From Basics to Advanced",
+  "duration": 180,
+  "language": "Python",
+  "scenes": [
+    {
+      "type": "intro",
+      "text": "Python Fundamentals and Philosophy\nPython is a high-level, interpreted programming language created by Guido van Rossum in 1991. It features dynamic typing with strong type enforcement, ensuring safe runtime operations without unsafe conversions. CPython executes bytecode using significant whitespace and standard indentation for clean code structures. Python supports procedural, object-oriented, and functional programming paradigms seamlessly.",
+      "audioUrl": "http://localhost:3002/audio/313cb1af-bd52-4753-869e-f8d067dba13b_scene_0.mp3",
+      "audioDuration": 235.333,
+      "subtitleWords": [
+        {
+          "word": "Python",
+          "startFrame": 0,
+          "endFrame": 128
+        },
+        {
+          "word": "Fundamentals",
+          "startFrame": 128,
+          "endFrame": 257
+        },
+        {
+          "word": "and",
+          "startFrame": 257,
+          "endFrame": 385
+        },
+        {
+          "word": "Philosophy",
+          "startFrame": 385,
+          "endFrame": 513
+        },
+        {
+          "word": "Python",
+          "startFrame": 513,
+          "endFrame": 642
+        },
+        {
+          "word": "is",
+          "startFrame": 642,
+          "endFrame": 770
+        },
+        {
+          "word": "a",
+          "startFrame": 770,
+          "endFrame": 899
+        },
+        {
+          "word": "high-level,",
+          "startFrame": 899,
+          "endFrame": 1027
+        },
+        {
+          "word": "interpreted",
+          "startFrame": 1027,
+          "endFrame": 1155
+        },
+        {
+          "word": "programming",
+          "startFrame": 1155,
+          "endFrame": 1284
+        },
+        {
+          "word": "language",
+          "startFrame": 1284,
+          "endFrame": 1412
+        },
+        {
+          "word": "created",
+          "startFrame": 1412,
+          "endFrame": 1540
+        },
+        {
+          "word": "by",
+          "startFrame": 1540,
+          "endFrame": 1669
+        },
+        {
+          "word": "Guido",
+          "startFrame": 1669,
+          "endFrame": 1797
+        },
+        {
+          "word": "van",
+          "startFrame": 1797,
+          "endFrame": 1925
+        },
+        {
+          "word": "Rossum",
+          "startFrame": 1925,
+          "endFrame": 2054
+        },
+        {
+          "word": "in",
+          "startFrame": 2054,
+          "endFrame": 2182
+        },
+        {
+          "word": "1991.",
+          "startFrame": 2182,
+          "endFrame": 2311
+        },
+        {
+          "word": "It",
+          "startFrame": 2311,
+          "endFrame": 2439
+        },
+        {
+          "word": "features",
+          "startFrame": 2439,
+          "endFrame": 2567
+        },
+        {
+          "word": "dynamic",
+          "startFrame": 2567,
+          "endFrame": 2696
+        },
+        {
+          "word": "typing",
+          "startFrame": 2696,
+          "endFrame": 2824
+        },
+        {
+          "word": "with",
+          "startFrame": 2824,
+          "endFrame": 2952
+        },
+        {
+          "word": "strong",
+          "startFrame": 2952,
+          "endFrame": 3081
+        },
+        {
+          "word": "type",
+          "startFrame": 3081,
+          "endFrame": 3209
+        },
+        {
+          "word": "enforcement,",
+          "startFrame": 3209,
+          "endFrame": 3337
+        },
+        {
+          "word": "ensuring",
+          "startFrame": 3337,
+          "endFrame": 3466
+        },
+        {
+          "word": "safe",
+          "startFrame": 3466,
+          "endFrame": 3594
+        },
+        {
+          "word": "runtime",
+          "startFrame": 3594,
+          "endFrame": 3723
+        },
+        {
+          "word": "operations",
+          "startFrame": 3723,
+          "endFrame": 3851
+        },
+        {
+          "word": "without",
+          "startFrame": 3851,
+          "endFrame": 3979
+        },
+        {
+          "word": "unsafe",
+          "startFrame": 3979,
+          "endFrame": 4108
+        },
+        {
+          "word": "conversions.",
+          "startFrame": 4108,
+          "endFrame": 4236
+        },
+        {
+          "word": "CPython",
+          "startFrame": 4236,
+          "endFrame": 4364
+        },
+        {
+          "word": "executes",
+          "startFrame": 4364,
+          "endFrame": 4493
+        },
+        {
+          "word": "bytecode",
+          "startFrame": 4493,
+          "endFrame": 4621
+        },
+        {
+          "word": "using",
+          "startFrame": 4621,
+          "endFrame": 4749
+        },
+        {
+          "word": "significant",
+          "startFrame": 4749,
+          "endFrame": 4878
+        },
+        {
+          "word": "whitespace",
+          "startFrame": 4878,
+          "endFrame": 5006
+        },
+        {
+          "word": "and",
+          "startFrame": 5006,
+          "endFrame": 5135
+        },
+        {
+          "word": "standard",
+          "startFrame": 5135,
+          "endFrame": 5263
+        },
+        {
+          "word": "indentation",
+          "startFrame": 5263,
+          "endFrame": 5391
+        },
+        {
+          "word": "for",
+          "startFrame": 5391,
+          "endFrame": 5520
+        },
+        {
+          "word": "clean",
+          "startFrame": 5520,
+          "endFrame": 5648
+        },
+        {
+          "word": "code",
+          "startFrame": 5648,
+          "endFrame": 5776
+        },
+        {
+          "word": "structures.",
+          "startFrame": 5776,
+          "endFrame": 5905
+        },
+        {
+          "word": "Python",
+          "startFrame": 5905,
+          "endFrame": 6033
+        },
+        {
+          "word": "supports",
+          "startFrame": 6033,
+          "endFrame": 6161
+        },
+        {
+          "word": "procedural,",
+          "startFrame": 6161,
+          "endFrame": 6290
+        },
+        {
+          "word": "object-oriented,",
+          "startFrame": 6290,
+          "endFrame": 6418
+        },
+        {
+          "word": "and",
+          "startFrame": 6418,
+          "endFrame": 6547
+        },
+        {
+          "word": "functional",
+          "startFrame": 6547,
+          "endFrame": 6675
+        },
+        {
+          "word": "programming",
+          "startFrame": 6675,
+          "endFrame": 6803
+        },
+        {
+          "word": "paradigms",
+          "startFrame": 6803,
+          "endFrame": 6932
+        },
+        {
+          "word": "seamlessly.",
+          "startFrame": 6932,
+          "endFrame": 7060
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "# Python Variables and Basic Data Types\nage = 25\nprice = 19.99\nname = \"Alice\"\nis_active = True\n\n# Data Structures: List, Tuple, Dict, Set\nnumbers = [1, 2, 3, 4]\npoint = (10, 20)\nuser = {\"name\": name, \"age\": age}\nunique_ids = {101, 102, 103}\n\nprint(f\"User {user['name']} is {age} years old.\")"
+    },
+    {
+      "type": "visual",
+      "animation": "forLoopIterator"
+    },
+    {
+      "type": "intro",
+      "text": "Control Flow and Iteration Patterns\nPython offers robust control structures including standard if-elif-else branches and Python 3.10 match-case syntax. Loops iterate lazily over sequences using range, enumerate, and zip utility functions. The walrus operator allows variable assignment directly inside conditional expressions to streamline code execution. Loop else blocks provide an elegant way to confirm that a search completed without hitting a break statement.",
+      "audioUrl": "http://localhost:3002/audio/313cb1af-bd52-4753-869e-f8d067dba13b_scene_3.mp3",
+      "audioDuration": 238.6765,
+      "subtitleWords": [
+        {
+          "word": "Control",
+          "startFrame": 0,
+          "endFrame": 114
+        },
+        {
+          "word": "Flow",
+          "startFrame": 114,
+          "endFrame": 227
+        },
+        {
+          "word": "and",
+          "startFrame": 227,
+          "endFrame": 341
+        },
+        {
+          "word": "Iteration",
+          "startFrame": 341,
+          "endFrame": 455
+        },
+        {
+          "word": "Patterns",
+          "startFrame": 455,
+          "endFrame": 568
+        },
+        {
+          "word": "Python",
+          "startFrame": 568,
+          "endFrame": 682
+        },
+        {
+          "word": "offers",
+          "startFrame": 682,
+          "endFrame": 796
+        },
+        {
+          "word": "robust",
+          "startFrame": 796,
+          "endFrame": 909
+        },
+        {
+          "word": "control",
+          "startFrame": 909,
+          "endFrame": 1023
+        },
+        {
+          "word": "structures",
+          "startFrame": 1023,
+          "endFrame": 1137
+        },
+        {
+          "word": "including",
+          "startFrame": 1137,
+          "endFrame": 1250
+        },
+        {
+          "word": "standard",
+          "startFrame": 1250,
+          "endFrame": 1364
+        },
+        {
+          "word": "if-elif-else",
+          "startFrame": 1364,
+          "endFrame": 1477
+        },
+        {
+          "word": "branches",
+          "startFrame": 1477,
+          "endFrame": 1591
+        },
+        {
+          "word": "and",
+          "startFrame": 1591,
+          "endFrame": 1705
+        },
+        {
+          "word": "Python",
+          "startFrame": 1705,
+          "endFrame": 1818
+        },
+        {
+          "word": "3.10",
+          "startFrame": 1818,
+          "endFrame": 1932
+        },
+        {
+          "word": "match-case",
+          "startFrame": 1932,
+          "endFrame": 2046
+        },
+        {
+          "word": "syntax.",
+          "startFrame": 2046,
+          "endFrame": 2159
+        },
+        {
+          "word": "Loops",
+          "startFrame": 2159,
+          "endFrame": 2273
+        },
+        {
+          "word": "iterate",
+          "startFrame": 2273,
+          "endFrame": 2387
+        },
+        {
+          "word": "lazily",
+          "startFrame": 2387,
+          "endFrame": 2500
+        },
+        {
+          "word": "over",
+          "startFrame": 2500,
+          "endFrame": 2614
+        },
+        {
+          "word": "sequences",
+          "startFrame": 2614,
+          "endFrame": 2728
+        },
+        {
+          "word": "using",
+          "startFrame": 2728,
+          "endFrame": 2841
+        },
+        {
+          "word": "range,",
+          "startFrame": 2841,
+          "endFrame": 2955
+        },
+        {
+          "word": "enumerate,",
+          "startFrame": 2955,
+          "endFrame": 3069
+        },
+        {
+          "word": "and",
+          "startFrame": 3069,
+          "endFrame": 3182
+        },
+        {
+          "word": "zip",
+          "startFrame": 3182,
+          "endFrame": 3296
+        },
+        {
+          "word": "utility",
+          "startFrame": 3296,
+          "endFrame": 3410
+        },
+        {
+          "word": "functions.",
+          "startFrame": 3410,
+          "endFrame": 3523
+        },
+        {
+          "word": "The",
+          "startFrame": 3523,
+          "endFrame": 3637
+        },
+        {
+          "word": "walrus",
+          "startFrame": 3637,
+          "endFrame": 3750
+        },
+        {
+          "word": "operator",
+          "startFrame": 3750,
+          "endFrame": 3864
+        },
+        {
+          "word": "allows",
+          "startFrame": 3864,
+          "endFrame": 3978
+        },
+        {
+          "word": "variable",
+          "startFrame": 3978,
+          "endFrame": 4091
+        },
+        {
+          "word": "assignment",
+          "startFrame": 4091,
+          "endFrame": 4205
+        },
+        {
+          "word": "directly",
+          "startFrame": 4205,
+          "endFrame": 4319
+        },
+        {
+          "word": "inside",
+          "startFrame": 4319,
+          "endFrame": 4432
+        },
+        {
+          "word": "conditional",
+          "startFrame": 4432,
+          "endFrame": 4546
+        },
+        {
+          "word": "expressions",
+          "startFrame": 4546,
+          "endFrame": 4660
+        },
+        {
+          "word": "to",
+          "startFrame": 4660,
+          "endFrame": 4773
+        },
+        {
+          "word": "streamline",
+          "startFrame": 4773,
+          "endFrame": 4887
+        },
+        {
+          "word": "code",
+          "startFrame": 4887,
+          "endFrame": 5001
+        },
+        {
+          "word": "execution.",
+          "startFrame": 5001,
+          "endFrame": 5114
+        },
+        {
+          "word": "Loop",
+          "startFrame": 5114,
+          "endFrame": 5228
+        },
+        {
+          "word": "else",
+          "startFrame": 5228,
+          "endFrame": 5342
+        },
+        {
+          "word": "blocks",
+          "startFrame": 5342,
+          "endFrame": 5455
+        },
+        {
+          "word": "provide",
+          "startFrame": 5455,
+          "endFrame": 5569
+        },
+        {
+          "word": "an",
+          "startFrame": 5569,
+          "endFrame": 5683
+        },
+        {
+          "word": "elegant",
+          "startFrame": 5683,
+          "endFrame": 5796
+        },
+        {
+          "word": "way",
+          "startFrame": 5796,
+          "endFrame": 5910
+        },
+        {
+          "word": "to",
+          "startFrame": 5910,
+          "endFrame": 6023
+        },
+        {
+          "word": "confirm",
+          "startFrame": 6023,
+          "endFrame": 6137
+        },
+        {
+          "word": "that",
+          "startFrame": 6137,
+          "endFrame": 6251
+        },
+        {
+          "word": "a",
+          "startFrame": 6251,
+          "endFrame": 6364
+        },
+        {
+          "word": "search",
+          "startFrame": 6364,
+          "endFrame": 6478
+        },
+        {
+          "word": "completed",
+          "startFrame": 6478,
+          "endFrame": 6592
+        },
+        {
+          "word": "without",
+          "startFrame": 6592,
+          "endFrame": 6705
+        },
+        {
+          "word": "hitting",
+          "startFrame": 6705,
+          "endFrame": 6819
+        },
+        {
+          "word": "a",
+          "startFrame": 6819,
+          "endFrame": 6933
+        },
+        {
+          "word": "break",
+          "startFrame": 6933,
+          "endFrame": 7046
+        },
+        {
+          "word": "statement.",
+          "startFrame": 7046,
+          "endFrame": 7160
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "# Control flow with Walrus operator and Exception handling\ndata = [10, 20, 30, 40, 50]\n\nif (n := len(data)) > 3:\n    print(f\"Processing {n} items in dataset\")\n\ntry:\n    result = 100 / data[0]\n    print(f\"Result: {result}\")\nexcept (ZeroDivisionError, IndexError) as err:\n    print(f\"Error encountered: {err}\")\nelse:\n    print(\"Operation completed successfully!\")\nfinally:\n    print(\"Cleanup completed.\")"
+    },
+    {
+      "type": "visual",
+      "animation": "whileCounter"
+    },
+    {
+      "type": "intro",
+      "text": "Functions, Closures, and Generators\nFunctions in Python are first-class objects capable of being passed as arguments or returned from other routines. Scope resolution follows the strict LEGB rule across Local, Enclosing, Global, and Built-in namespaces. Generators utilize the yield keyword to produce values lazily while maintaining internal state without memory overload. Decorators wrap existing functions using closures to dynamically extend functionality at runtime.",
+      "audioUrl": "http://localhost:3002/audio/313cb1af-bd52-4753-869e-f8d067dba13b_scene_6.mp3",
+      "audioDuration": 252.469,
+      "subtitleWords": [
+        {
+          "word": "Functions,",
+          "startFrame": 0,
+          "endFrame": 120
+        },
+        {
+          "word": "Closures,",
+          "startFrame": 120,
+          "endFrame": 240
+        },
+        {
+          "word": "and",
+          "startFrame": 240,
+          "endFrame": 361
+        },
+        {
+          "word": "Generators",
+          "startFrame": 361,
+          "endFrame": 481
+        },
+        {
+          "word": "Functions",
+          "startFrame": 481,
+          "endFrame": 601
+        },
+        {
+          "word": "in",
+          "startFrame": 601,
+          "endFrame": 721
+        },
+        {
+          "word": "Python",
+          "startFrame": 721,
+          "endFrame": 842
+        },
+        {
+          "word": "are",
+          "startFrame": 842,
+          "endFrame": 962
+        },
+        {
+          "word": "first-class",
+          "startFrame": 962,
+          "endFrame": 1082
+        },
+        {
+          "word": "objects",
+          "startFrame": 1082,
+          "endFrame": 1202
+        },
+        {
+          "word": "capable",
+          "startFrame": 1202,
+          "endFrame": 1322
+        },
+        {
+          "word": "of",
+          "startFrame": 1322,
+          "endFrame": 1443
+        },
+        {
+          "word": "being",
+          "startFrame": 1443,
+          "endFrame": 1563
+        },
+        {
+          "word": "passed",
+          "startFrame": 1563,
+          "endFrame": 1683
+        },
+        {
+          "word": "as",
+          "startFrame": 1683,
+          "endFrame": 1803
+        },
+        {
+          "word": "arguments",
+          "startFrame": 1803,
+          "endFrame": 1924
+        },
+        {
+          "word": "or",
+          "startFrame": 1924,
+          "endFrame": 2044
+        },
+        {
+          "word": "returned",
+          "startFrame": 2044,
+          "endFrame": 2164
+        },
+        {
+          "word": "from",
+          "startFrame": 2164,
+          "endFrame": 2284
+        },
+        {
+          "word": "other",
+          "startFrame": 2284,
+          "endFrame": 2404
+        },
+        {
+          "word": "routines.",
+          "startFrame": 2404,
+          "endFrame": 2525
+        },
+        {
+          "word": "Scope",
+          "startFrame": 2525,
+          "endFrame": 2645
+        },
+        {
+          "word": "resolution",
+          "startFrame": 2645,
+          "endFrame": 2765
+        },
+        {
+          "word": "follows",
+          "startFrame": 2765,
+          "endFrame": 2885
+        },
+        {
+          "word": "the",
+          "startFrame": 2885,
+          "endFrame": 3006
+        },
+        {
+          "word": "strict",
+          "startFrame": 3006,
+          "endFrame": 3126
+        },
+        {
+          "word": "LEGB",
+          "startFrame": 3126,
+          "endFrame": 3246
+        },
+        {
+          "word": "rule",
+          "startFrame": 3246,
+          "endFrame": 3366
+        },
+        {
+          "word": "across",
+          "startFrame": 3366,
+          "endFrame": 3486
+        },
+        {
+          "word": "Local,",
+          "startFrame": 3486,
+          "endFrame": 3607
+        },
+        {
+          "word": "Enclosing,",
+          "startFrame": 3607,
+          "endFrame": 3727
+        },
+        {
+          "word": "Global,",
+          "startFrame": 3727,
+          "endFrame": 3847
+        },
+        {
+          "word": "and",
+          "startFrame": 3847,
+          "endFrame": 3967
+        },
+        {
+          "word": "Built-in",
+          "startFrame": 3967,
+          "endFrame": 4088
+        },
+        {
+          "word": "namespaces.",
+          "startFrame": 4088,
+          "endFrame": 4208
+        },
+        {
+          "word": "Generators",
+          "startFrame": 4208,
+          "endFrame": 4328
+        },
+        {
+          "word": "utilize",
+          "startFrame": 4328,
+          "endFrame": 4448
+        },
+        {
+          "word": "the",
+          "startFrame": 4448,
+          "endFrame": 4568
+        },
+        {
+          "word": "yield",
+          "startFrame": 4568,
+          "endFrame": 4689
+        },
+        {
+          "word": "keyword",
+          "startFrame": 4689,
+          "endFrame": 4809
+        },
+        {
+          "word": "to",
+          "startFrame": 4809,
+          "endFrame": 4929
+        },
+        {
+          "word": "produce",
+          "startFrame": 4929,
+          "endFrame": 5049
+        },
+        {
+          "word": "values",
+          "startFrame": 5049,
+          "endFrame": 5170
+        },
+        {
+          "word": "lazily",
+          "startFrame": 5170,
+          "endFrame": 5290
+        },
+        {
+          "word": "while",
+          "startFrame": 5290,
+          "endFrame": 5410
+        },
+        {
+          "word": "maintaining",
+          "startFrame": 5410,
+          "endFrame": 5530
+        },
+        {
+          "word": "internal",
+          "startFrame": 5530,
+          "endFrame": 5650
+        },
+        {
+          "word": "state",
+          "startFrame": 5650,
+          "endFrame": 5771
+        },
+        {
+          "word": "without",
+          "startFrame": 5771,
+          "endFrame": 5891
+        },
+        {
+          "word": "memory",
+          "startFrame": 5891,
+          "endFrame": 6011
+        },
+        {
+          "word": "overload.",
+          "startFrame": 6011,
+          "endFrame": 6131
+        },
+        {
+          "word": "Decorators",
+          "startFrame": 6131,
+          "endFrame": 6252
+        },
+        {
+          "word": "wrap",
+          "startFrame": 6252,
+          "endFrame": 6372
+        },
+        {
+          "word": "existing",
+          "startFrame": 6372,
+          "endFrame": 6492
+        },
+        {
+          "word": "functions",
+          "startFrame": 6492,
+          "endFrame": 6612
+        },
+        {
+          "word": "using",
+          "startFrame": 6612,
+          "endFrame": 6732
+        },
+        {
+          "word": "closures",
+          "startFrame": 6732,
+          "endFrame": 6853
+        },
+        {
+          "word": "to",
+          "startFrame": 6853,
+          "endFrame": 6973
+        },
+        {
+          "word": "dynamically",
+          "startFrame": 6973,
+          "endFrame": 7093
+        },
+        {
+          "word": "extend",
+          "startFrame": 7093,
+          "endFrame": 7213
+        },
+        {
+          "word": "functionality",
+          "startFrame": 7213,
+          "endFrame": 7334
+        },
+        {
+          "word": "at",
+          "startFrame": 7334,
+          "endFrame": 7454
+        },
+        {
+          "word": "runtime.",
+          "startFrame": 7454,
+          "endFrame": 7574
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "# Decorator and Generator demonstration\nfrom functools import wraps\n\ndef log_execution(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        print(f\"Calling {func.__name__}\")\n        return func(*args, **kwargs)\n    return wrapper\n\n@log_execution\ndef count_down(start):\n    while start > 0:\n        yield start\n        start -= 1\n\nfor num in count_down(3):\n    print(f\"Count: {num}\")"
+    },
+    {
+      "type": "intro",
+      "text": "Object-Oriented Programming in Python\nObject-Oriented Programming organizes software design around classes and instances representing real-world entities. Encapsulation protects class attributes using double underscore name mangling and pythonic property decorators. Polymorphism allows disparate classes to share uniform method signatures via Python's flexible duck typing. Abstract base classes define mandatory contracts that subclasses must implement before instantiation.",
+      "audioUrl": "http://localhost:3002/audio/313cb1af-bd52-4753-869e-f8d067dba13b_scene_8.mp3",
+      "audioDuration": 234.288,
+      "subtitleWords": [
+        {
+          "word": "Object-Oriented",
+          "startFrame": 0,
+          "endFrame": 128
+        },
+        {
+          "word": "Programming",
+          "startFrame": 128,
+          "endFrame": 256
+        },
+        {
+          "word": "in",
+          "startFrame": 256,
+          "endFrame": 383
+        },
+        {
+          "word": "Python",
+          "startFrame": 383,
+          "endFrame": 511
+        },
+        {
+          "word": "Object-Oriented",
+          "startFrame": 511,
+          "endFrame": 639
+        },
+        {
+          "word": "Programming",
+          "startFrame": 639,
+          "endFrame": 767
+        },
+        {
+          "word": "organizes",
+          "startFrame": 767,
+          "endFrame": 895
+        },
+        {
+          "word": "software",
+          "startFrame": 895,
+          "endFrame": 1022
+        },
+        {
+          "word": "design",
+          "startFrame": 1022,
+          "endFrame": 1150
+        },
+        {
+          "word": "around",
+          "startFrame": 1150,
+          "endFrame": 1278
+        },
+        {
+          "word": "classes",
+          "startFrame": 1278,
+          "endFrame": 1406
+        },
+        {
+          "word": "and",
+          "startFrame": 1406,
+          "endFrame": 1534
+        },
+        {
+          "word": "instances",
+          "startFrame": 1534,
+          "endFrame": 1661
+        },
+        {
+          "word": "representing",
+          "startFrame": 1661,
+          "endFrame": 1789
+        },
+        {
+          "word": "real-world",
+          "startFrame": 1789,
+          "endFrame": 1917
+        },
+        {
+          "word": "entities.",
+          "startFrame": 1917,
+          "endFrame": 2045
+        },
+        {
+          "word": "Encapsulation",
+          "startFrame": 2045,
+          "endFrame": 2173
+        },
+        {
+          "word": "protects",
+          "startFrame": 2173,
+          "endFrame": 2300
+        },
+        {
+          "word": "class",
+          "startFrame": 2300,
+          "endFrame": 2428
+        },
+        {
+          "word": "attributes",
+          "startFrame": 2428,
+          "endFrame": 2556
+        },
+        {
+          "word": "using",
+          "startFrame": 2556,
+          "endFrame": 2684
+        },
+        {
+          "word": "double",
+          "startFrame": 2684,
+          "endFrame": 2812
+        },
+        {
+          "word": "underscore",
+          "startFrame": 2812,
+          "endFrame": 2939
+        },
+        {
+          "word": "name",
+          "startFrame": 2939,
+          "endFrame": 3067
+        },
+        {
+          "word": "mangling",
+          "startFrame": 3067,
+          "endFrame": 3195
+        },
+        {
+          "word": "and",
+          "startFrame": 3195,
+          "endFrame": 3323
+        },
+        {
+          "word": "pythonic",
+          "startFrame": 3323,
+          "endFrame": 3451
+        },
+        {
+          "word": "property",
+          "startFrame": 3451,
+          "endFrame": 3578
+        },
+        {
+          "word": "decorators.",
+          "startFrame": 3578,
+          "endFrame": 3706
+        },
+        {
+          "word": "Polymorphism",
+          "startFrame": 3706,
+          "endFrame": 3834
+        },
+        {
+          "word": "allows",
+          "startFrame": 3834,
+          "endFrame": 3962
+        },
+        {
+          "word": "disparate",
+          "startFrame": 3962,
+          "endFrame": 4090
+        },
+        {
+          "word": "classes",
+          "startFrame": 4090,
+          "endFrame": 4217
+        },
+        {
+          "word": "to",
+          "startFrame": 4217,
+          "endFrame": 4345
+        },
+        {
+          "word": "share",
+          "startFrame": 4345,
+          "endFrame": 4473
+        },
+        {
+          "word": "uniform",
+          "startFrame": 4473,
+          "endFrame": 4601
+        },
+        {
+          "word": "method",
+          "startFrame": 4601,
+          "endFrame": 4729
+        },
+        {
+          "word": "signatures",
+          "startFrame": 4729,
+          "endFrame": 4856
+        },
+        {
+          "word": "via",
+          "startFrame": 4856,
+          "endFrame": 4984
+        },
+        {
+          "word": "Python's",
+          "startFrame": 4984,
+          "endFrame": 5112
+        },
+        {
+          "word": "flexible",
+          "startFrame": 5112,
+          "endFrame": 5240
+        },
+        {
+          "word": "duck",
+          "startFrame": 5240,
+          "endFrame": 5368
+        },
+        {
+          "word": "typing.",
+          "startFrame": 5368,
+          "endFrame": 5495
+        },
+        {
+          "word": "Abstract",
+          "startFrame": 5495,
+          "endFrame": 5623
+        },
+        {
+          "word": "base",
+          "startFrame": 5623,
+          "endFrame": 5751
+        },
+        {
+          "word": "classes",
+          "startFrame": 5751,
+          "endFrame": 5879
+        },
+        {
+          "word": "define",
+          "startFrame": 5879,
+          "endFrame": 6007
+        },
+        {
+          "word": "mandatory",
+          "startFrame": 6007,
+          "endFrame": 6134
+        },
+        {
+          "word": "contracts",
+          "startFrame": 6134,
+          "endFrame": 6262
+        },
+        {
+          "word": "that",
+          "startFrame": 6262,
+          "endFrame": 6390
+        },
+        {
+          "word": "subclasses",
+          "startFrame": 6390,
+          "endFrame": 6518
+        },
+        {
+          "word": "must",
+          "startFrame": 6518,
+          "endFrame": 6646
+        },
+        {
+          "word": "implement",
+          "startFrame": 6646,
+          "endFrame": 6773
+        },
+        {
+          "word": "before",
+          "startFrame": 6773,
+          "endFrame": 6901
+        },
+        {
+          "word": "instantiation.",
+          "startFrame": 6901,
+          "endFrame": 7029
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "# Object-Oriented Programming with Property and Inheritance\nclass BankAccount:\n    def __init__(self, owner, balance=0.0):\n        self.owner = owner\n        self._balance = balance\n\n    @property\n    def balance(self):\n        return self._balance\n\n    def deposit(self, amount):\n        if amount > 0:\n            self._balance += amount\n            return True\n        return False\n\n    def __str__(self):\n        return f\"Account({self.owner}, ${self._balance:.2f})\"\n\nacc = BankAccount(\"Bob\", 100.0)\nacc.deposit(50.0)\nprint(acc)"
+    },
+    {
+      "type": "intro",
+      "text": "Concurrency, Threading, and Async Architecture\nPython handles concurrent processing through distinct approaches tailored to CPU-bound or I/O-bound workloads. The Global Interpreter Lock limits true multithreaded parallelism, making multiprocessing essential for CPU-heavy tasks. Asyncio delivers high-performance non-blocking I/O using a single-threaded event loop and async-await syntax. Selecting the appropriate concurrency strategy ensures optimal throughput for high-scale network services.",
+      "audioUrl": "http://localhost:3002/audio/313cb1af-bd52-4753-869e-f8d067dba13b_scene_10.mp3",
+      "audioDuration": 263.127,
+      "subtitleWords": [
+        {
+          "word": "Concurrency,",
+          "startFrame": 0,
+          "endFrame": 138
+        },
+        {
+          "word": "Threading,",
+          "startFrame": 138,
+          "endFrame": 277
+        },
+        {
+          "word": "and",
+          "startFrame": 277,
+          "endFrame": 415
+        },
+        {
+          "word": "Async",
+          "startFrame": 415,
+          "endFrame": 554
+        },
+        {
+          "word": "Architecture",
+          "startFrame": 554,
+          "endFrame": 692
+        },
+        {
+          "word": "Python",
+          "startFrame": 692,
+          "endFrame": 831
+        },
+        {
+          "word": "handles",
+          "startFrame": 831,
+          "endFrame": 969
+        },
+        {
+          "word": "concurrent",
+          "startFrame": 969,
+          "endFrame": 1108
+        },
+        {
+          "word": "processing",
+          "startFrame": 1108,
+          "endFrame": 1246
+        },
+        {
+          "word": "through",
+          "startFrame": 1246,
+          "endFrame": 1385
+        },
+        {
+          "word": "distinct",
+          "startFrame": 1385,
+          "endFrame": 1523
+        },
+        {
+          "word": "approaches",
+          "startFrame": 1523,
+          "endFrame": 1662
+        },
+        {
+          "word": "tailored",
+          "startFrame": 1662,
+          "endFrame": 1800
+        },
+        {
+          "word": "to",
+          "startFrame": 1800,
+          "endFrame": 1939
+        },
+        {
+          "word": "CPU-bound",
+          "startFrame": 1939,
+          "endFrame": 2077
+        },
+        {
+          "word": "or",
+          "startFrame": 2077,
+          "endFrame": 2216
+        },
+        {
+          "word": "I/O-bound",
+          "startFrame": 2216,
+          "endFrame": 2354
+        },
+        {
+          "word": "workloads.",
+          "startFrame": 2354,
+          "endFrame": 2493
+        },
+        {
+          "word": "The",
+          "startFrame": 2493,
+          "endFrame": 2631
+        },
+        {
+          "word": "Global",
+          "startFrame": 2631,
+          "endFrame": 2770
+        },
+        {
+          "word": "Interpreter",
+          "startFrame": 2770,
+          "endFrame": 2908
+        },
+        {
+          "word": "Lock",
+          "startFrame": 2908,
+          "endFrame": 3047
+        },
+        {
+          "word": "limits",
+          "startFrame": 3047,
+          "endFrame": 3185
+        },
+        {
+          "word": "true",
+          "startFrame": 3185,
+          "endFrame": 3324
+        },
+        {
+          "word": "multithreaded",
+          "startFrame": 3324,
+          "endFrame": 3462
+        },
+        {
+          "word": "parallelism,",
+          "startFrame": 3462,
+          "endFrame": 3601
+        },
+        {
+          "word": "making",
+          "startFrame": 3601,
+          "endFrame": 3739
+        },
+        {
+          "word": "multiprocessing",
+          "startFrame": 3739,
+          "endFrame": 3878
+        },
+        {
+          "word": "essential",
+          "startFrame": 3878,
+          "endFrame": 4016
+        },
+        {
+          "word": "for",
+          "startFrame": 4016,
+          "endFrame": 4155
+        },
+        {
+          "word": "CPU-heavy",
+          "startFrame": 4155,
+          "endFrame": 4293
+        },
+        {
+          "word": "tasks.",
+          "startFrame": 4293,
+          "endFrame": 4432
+        },
+        {
+          "word": "Asyncio",
+          "startFrame": 4432,
+          "endFrame": 4570
+        },
+        {
+          "word": "delivers",
+          "startFrame": 4570,
+          "endFrame": 4709
+        },
+        {
+          "word": "high-performance",
+          "startFrame": 4709,
+          "endFrame": 4847
+        },
+        {
+          "word": "non-blocking",
+          "startFrame": 4847,
+          "endFrame": 4986
+        },
+        {
+          "word": "I/O",
+          "startFrame": 4986,
+          "endFrame": 5124
+        },
+        {
+          "word": "using",
+          "startFrame": 5124,
+          "endFrame": 5263
+        },
+        {
+          "word": "a",
+          "startFrame": 5263,
+          "endFrame": 5401
+        },
+        {
+          "word": "single-threaded",
+          "startFrame": 5401,
+          "endFrame": 5540
+        },
+        {
+          "word": "event",
+          "startFrame": 5540,
+          "endFrame": 5678
+        },
+        {
+          "word": "loop",
+          "startFrame": 5678,
+          "endFrame": 5817
+        },
+        {
+          "word": "and",
+          "startFrame": 5817,
+          "endFrame": 5955
+        },
+        {
+          "word": "async-await",
+          "startFrame": 5955,
+          "endFrame": 6094
+        },
+        {
+          "word": "syntax.",
+          "startFrame": 6094,
+          "endFrame": 6232
+        },
+        {
+          "word": "Selecting",
+          "startFrame": 6232,
+          "endFrame": 6371
+        },
+        {
+          "word": "the",
+          "startFrame": 6371,
+          "endFrame": 6509
+        },
+        {
+          "word": "appropriate",
+          "startFrame": 6509,
+          "endFrame": 6648
+        },
+        {
+          "word": "concurrency",
+          "startFrame": 6648,
+          "endFrame": 6786
+        },
+        {
+          "word": "strategy",
+          "startFrame": 6786,
+          "endFrame": 6925
+        },
+        {
+          "word": "ensures",
+          "startFrame": 6925,
+          "endFrame": 7063
+        },
+        {
+          "word": "optimal",
+          "startFrame": 7063,
+          "endFrame": 7202
+        },
+        {
+          "word": "throughput",
+          "startFrame": 7202,
+          "endFrame": 7340
+        },
+        {
+          "word": "for",
+          "startFrame": 7340,
+          "endFrame": 7479
+        },
+        {
+          "word": "high-scale",
+          "startFrame": 7479,
+          "endFrame": 7617
+        },
+        {
+          "word": "network",
+          "startFrame": 7617,
+          "endFrame": 7756
+        },
+        {
+          "word": "services.",
+          "startFrame": 7756,
+          "endFrame": 7894
+        }
+      ]
+    },
+    {
+      "type": "code",
+      "code": "# Asynchronous programming with asyncio\nimport asyncio\n\nasync def fetch_data(item_id):\n    print(f\"Fetching item {item_id}...\")\n    await asyncio.sleep(1)\n    return {\"id\": item_id, \"status\": \"success\"}\n\nasync def main():\n    results = await asyncio.gather(\n        fetch_data(1),\n        fetch_data(2),\n        fetch_data(3)\n    )\n    print(f\"Fetched {len(results)} items successfully.\")\n\nasyncio.run(main())"
+    },
+    {
+      "type": "intro",
+      "text": "Python Ecosystem and Summary Takeaways\nMastering Python equips developers with tools spanning web development, data science, and systems automation. Core libraries like NumPy and Pandas provide high-performance vectorized operations for massive datasets. Web frameworks such as Flask, Django, and FastAPI enable rapid API deployment with built-in database integrations. Understanding core memory models, concurrency, and OOP principles empowers you to build robust scalable applications.",
+      "audioUrl": "http://localhost:3002/audio/313cb1af-bd52-4753-869e-f8d067dba13b_scene_12.mp3",
+      "audioDuration": 251.2155,
+      "subtitleWords": [
+        {
+          "word": "Python",
+          "startFrame": 0,
+          "endFrame": 120
+        },
+        {
+          "word": "Ecosystem",
+          "startFrame": 120,
+          "endFrame": 239
+        },
+        {
+          "word": "and",
+          "startFrame": 239,
+          "endFrame": 359
+        },
+        {
+          "word": "Summary",
+          "startFrame": 359,
+          "endFrame": 478
+        },
+        {
+          "word": "Takeaways",
+          "startFrame": 478,
+          "endFrame": 598
+        },
+        {
+          "word": "Mastering",
+          "startFrame": 598,
+          "endFrame": 718
+        },
+        {
+          "word": "Python",
+          "startFrame": 718,
+          "endFrame": 837
+        },
+        {
+          "word": "equips",
+          "startFrame": 837,
+          "endFrame": 957
+        },
+        {
+          "word": "developers",
+          "startFrame": 957,
+          "endFrame": 1077
+        },
+        {
+          "word": "with",
+          "startFrame": 1077,
+          "endFrame": 1196
+        },
+        {
+          "word": "tools",
+          "startFrame": 1196,
+          "endFrame": 1316
+        },
+        {
+          "word": "spanning",
+          "startFrame": 1316,
+          "endFrame": 1435
+        },
+        {
+          "word": "web",
+          "startFrame": 1435,
+          "endFrame": 1555
+        },
+        {
+          "word": "development,",
+          "startFrame": 1555,
+          "endFrame": 1675
+        },
+        {
+          "word": "data",
+          "startFrame": 1675,
+          "endFrame": 1794
+        },
+        {
+          "word": "science,",
+          "startFrame": 1794,
+          "endFrame": 1914
+        },
+        {
+          "word": "and",
+          "startFrame": 1914,
+          "endFrame": 2034
+        },
+        {
+          "word": "systems",
+          "startFrame": 2034,
+          "endFrame": 2153
+        },
+        {
+          "word": "automation.",
+          "startFrame": 2153,
+          "endFrame": 2273
+        },
+        {
+          "word": "Core",
+          "startFrame": 2273,
+          "endFrame": 2392
+        },
+        {
+          "word": "libraries",
+          "startFrame": 2392,
+          "endFrame": 2512
+        },
+        {
+          "word": "like",
+          "startFrame": 2512,
+          "endFrame": 2632
+        },
+        {
+          "word": "NumPy",
+          "startFrame": 2632,
+          "endFrame": 2751
+        },
+        {
+          "word": "and",
+          "startFrame": 2751,
+          "endFrame": 2871
+        },
+        {
+          "word": "Pandas",
+          "startFrame": 2871,
+          "endFrame": 2990
+        },
+        {
+          "word": "provide",
+          "startFrame": 2990,
+          "endFrame": 3110
+        },
+        {
+          "word": "high-performance",
+          "startFrame": 3110,
+          "endFrame": 3230
+        },
+        {
+          "word": "vectorized",
+          "startFrame": 3230,
+          "endFrame": 3349
+        },
+        {
+          "word": "operations",
+          "startFrame": 3349,
+          "endFrame": 3469
+        },
+        {
+          "word": "for",
+          "startFrame": 3469,
+          "endFrame": 3589
+        },
+        {
+          "word": "massive",
+          "startFrame": 3589,
+          "endFrame": 3708
+        },
+        {
+          "word": "datasets.",
+          "startFrame": 3708,
+          "endFrame": 3828
+        },
+        {
+          "word": "Web",
+          "startFrame": 3828,
+          "endFrame": 3947
+        },
+        {
+          "word": "frameworks",
+          "startFrame": 3947,
+          "endFrame": 4067
+        },
+        {
+          "word": "such",
+          "startFrame": 4067,
+          "endFrame": 4187
+        },
+        {
+          "word": "as",
+          "startFrame": 4187,
+          "endFrame": 4306
+        },
+        {
+          "word": "Flask,",
+          "startFrame": 4306,
+          "endFrame": 4426
+        },
+        {
+          "word": "Django,",
+          "startFrame": 4426,
+          "endFrame": 4546
+        },
+        {
+          "word": "and",
+          "startFrame": 4546,
+          "endFrame": 4665
+        },
+        {
+          "word": "FastAPI",
+          "startFrame": 4665,
+          "endFrame": 4785
+        },
+        {
+          "word": "enable",
+          "startFrame": 4785,
+          "endFrame": 4904
+        },
+        {
+          "word": "rapid",
+          "startFrame": 4904,
+          "endFrame": 5024
+        },
+        {
+          "word": "API",
+          "startFrame": 5024,
+          "endFrame": 5144
+        },
+        {
+          "word": "deployment",
+          "startFrame": 5144,
+          "endFrame": 5263
+        },
+        {
+          "word": "with",
+          "startFrame": 5263,
+          "endFrame": 5383
+        },
+        {
+          "word": "built-in",
+          "startFrame": 5383,
+          "endFrame": 5502
+        },
+        {
+          "word": "database",
+          "startFrame": 5502,
+          "endFrame": 5622
+        },
+        {
+          "word": "integrations.",
+          "startFrame": 5622,
+          "endFrame": 5742
+        },
+        {
+          "word": "Understanding",
+          "startFrame": 5742,
+          "endFrame": 5861
+        },
+        {
+          "word": "core",
+          "startFrame": 5861,
+          "endFrame": 5981
+        },
+        {
+          "word": "memory",
+          "startFrame": 5981,
+          "endFrame": 6101
+        },
+        {
+          "word": "models,",
+          "startFrame": 6101,
+          "endFrame": 6220
+        },
+        {
+          "word": "concurrency,",
+          "startFrame": 6220,
+          "endFrame": 6340
+        },
+        {
+          "word": "and",
+          "startFrame": 6340,
+          "endFrame": 6459
+        },
+        {
+          "word": "OOP",
+          "startFrame": 6459,
+          "endFrame": 6579
+        },
+        {
+          "word": "principles",
+          "startFrame": 6579,
+          "endFrame": 6699
+        },
+        {
+          "word": "empowers",
+          "startFrame": 6699,
+          "endFrame": 6818
+        },
+        {
+          "word": "you",
+          "startFrame": 6818,
+          "endFrame": 6938
+        },
+        {
+          "word": "to",
+          "startFrame": 6938,
+          "endFrame": 7058
+        },
+        {
+          "word": "build",
+          "startFrame": 7058,
+          "endFrame": 7177
+        },
+        {
+          "word": "robust",
+          "startFrame": 7177,
+          "endFrame": 7297
+        },
+        {
+          "word": "scalable",
+          "startFrame": 7297,
+          "endFrame": 7416
+        },
+        {
+          "word": "applications.",
+          "startFrame": 7416,
+          "endFrame": 7536
+        }
+      ]
+    }
+  ],
+  "avatarMode": true
+}

@@ -1,0 +1,1 @@
+﻿Python for loops are used to iterate over a sequence like a list, tuple, or string. The syntax is: for item in sequence: do something. For example, to print numbers 1 to 5, write: for i in range(1, 6): print(i). You can also use for loops to iterate over list elements. Break statement exits the loop early. Continue skips the current iteration.

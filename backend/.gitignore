@@ -1,0 +1,9 @@
+﻿# Environment secrets — NEVER commit
+.env
+
+# Local build artifacts
+out/
+temp_script_*.json
+
+# Dependencies
+node_modules/
