@@ -128,7 +128,7 @@ export default function ISLVideoPlayerModal({
           backgroundColor: "var(--bg-card)",
           borderRadius: "var(--radius-lg)",
           width: "100%",
-          maxWidth: "560px",
+          maxWidth: "760px",
           border: "1px solid var(--border-medium)",
           boxShadow: "var(--shadow-lg)",
           overflow: "hidden",
@@ -178,7 +178,7 @@ export default function ISLVideoPlayerModal({
           {/* Sign display area */}
           <div
             style={{
-              height: "220px",
+              height: "360px",
               position: "relative",
               display: "flex",
               alignItems: "center",
@@ -202,7 +202,7 @@ export default function ISLVideoPlayerModal({
                 onLoadedMetadata={(e) => {
                   e.currentTarget.playbackRate = speed;
                 }}
-                style={{ maxHeight: "180px", borderRadius: "8px" }}
+                style={{ maxHeight: "320px", borderRadius: "8px" }}
               />
             )}
 

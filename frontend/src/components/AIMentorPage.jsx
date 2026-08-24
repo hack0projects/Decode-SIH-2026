@@ -7,16 +7,42 @@ import { askTutor, translateText } from "../services/api";
 export default function AIMentorPage({ currentLang }) {
   const [selectedLang, setSelectedLang] = useState(currentLang || "hi");
   const [inputQuery, setInputQuery] = useState("");
+
+  const INITIAL_GREETINGS = {
+    hi: "नमस्ते! मैं आपका CodeSeekho AI मेंटर हूँ। मैं कक्षा 8+ के छात्रों को क्षेत्रीय भाषाओं में प्रोग्रामिंग अवधारणाओं को समझने में मदद करता हूँ। आज मैं आपकी क्या मदद कर सकता हूँ?",
+    en: "Namaste! I am your CodeSeekho AI Mentor. I help Class 8+ students understand programming concepts in plain regional languages without spoiling answers with direct code dumps. How can I help you today?",
+    ta: "வணக்கம்! நான் உங்கள் CodeSeekho AI வழிகாட்டி. வகுப்பு 8+ மாணவர்களுக்கு நிரலாக்கக் கருத்துக்களைப் புரிந்துகொள்ள உதவுகிறேன். இன்று உங்களுக்கு எவ்வாறு உதவ முடியும்?",
+    te: "నమస్తే! నేను మీ CodeSeekho AI మెంటార్‌ను. 8వ తరగతి + విద్యార్థులకు ప్రోగ్రామింగ్ కాన్సెప్ట్‌లను అర్థం చేసుకోవడానికి నేను సహాయం చేస్తాను. ఈరోజు నేను మీకు ఎలా సహాయపడగలను?",
+    kn: "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ CodeSeekho AI ಮೆಂಟರ್. 8 ನೇ ತರಗತಿ+ ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ಪ್ರೋಗ್ರಾಮಿಂಗ್ ಪರಿಕಲ್ಪನೆಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ನಾನು ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?",
+    mr: "नमस्ते! मी तुमचा CodeSeekho AI मेंटॉर आहे. मी इयत्ता 8वी+ च्या विद्यार्थ्यांना प्रोग्रामिंग संकल्पना समजून घेण्यास मदत करतो. आज मी तुम्हाला कशी मदत करू शकतो?",
+    bn: "নমস্কার! আমি আপনার CodeSeekho AI মেন্টর। আমি অষ্টম শ্রেণী+ এর ছাত্রদের প্রোগ্রামিং ধারণাগুলি বুঝতে সাহায্য করি। আজ কীভাবে সাহায্য করতে পারি?",
+    gu: "નમસ્તે! હું તમારો CodeSeekho AI મેન્ટર છું. હું ધોરણ 8+ ના વિદ્યાર્થીઓને પ્રોગ્રામિંગ વિભાવનાઓ સમજવામાં મદદ કરું છું. આજે હું તમને કેવી રીતે મદદ કરી શકું?"
+  };
+
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Namaste! I am your CodeSeekho AI Mentor. I help Class 8+ students understand programming concepts in plain regional languages without spoiling answers with direct code dumps. How can I help you today?",
+      text: INITIAL_GREETINGS[currentLang || "hi"] || INITIAL_GREETINGS.hi,
       englishText:
         "Namaste! I am your CodeSeekho AI Mentor. I help Class 8+ students understand programming concepts in plain regional languages without spoiling answers with direct code dumps. How can I help you today?",
       islAvailable: true,
       concept: "Introduction",
     },
   ]);
+
+  // Sync initial message greeting whenever selectedLang or currentLang changes
+  React.useEffect(() => {
+    const lang = selectedLang || currentLang || "hi";
+    const greetingText = INITIAL_GREETINGS[lang] || INITIAL_GREETINGS.en;
+    setMessages((prev) => {
+      if (!prev || prev.length === 0) return prev;
+      const updated = [...prev];
+      if (updated[0].role === "assistant" && updated[0].concept === "Introduction") {
+        updated[0] = { ...updated[0], text: greetingText };
+      }
+      return updated;
+    });
+  }, [selectedLang, currentLang]);
 
   const [isIslModalOpen, setIsIslModalOpen] = useState(false);
   const [activeIslConcept, setActiveIslConcept] = useState("");
@@ -93,24 +119,32 @@ export default function AIMentorPage({ currentLang }) {
       const tutorReply = res?.reply || res?.response || res?.answer;
 
       if (tutorReply && !res?.error) {
-        // askTutor may already respond in the selected language depending
-        // on backend behavior; we still need an English anchor for ISL,
-        // so ask for an English version too when the UI isn't English.
         englishText = res?.englishReply || tutorReply;
         displayText =
           selectedLang !== "en" && !res?.englishReply
             ? await translateReply(tutorReply, selectedLang, "Aarav")
             : tutorReply;
       } else {
-        // Fallback canned answers with live translation.
-        englishText =
-          "Programming concepts are best understood by practicing small examples!";
-        if (userText.toLowerCase().includes("loop")) {
+        // Smart Socratic explanation fallback for coding concepts
+        const lowerQ = userText.toLowerCase();
+        if (lowerQ.includes("data structure") || lowerQ.includes("structure")) {
           englishText =
-            "A loop repeats instructions until a condition turns false, like running laps around a track.";
-        } else if (userText.toLowerCase().includes("error")) {
+            "A Data Structure is a specialized way of organizing and storing data in a computer so that it can be accessed and modified efficiently. Think of it like a library bookshelf (Array) or a stack of plates (Stack) — each structure is designed for a specific purpose!";
+        } else if (lowerQ.includes("loop") || lowerQ.includes("for") || lowerQ.includes("while")) {
           englishText =
-            "Syntax errors happen when instructions are incomplete. Check for missing quotes or parentheses.";
+            "A Loop repeats a block of code instructions until a specific condition turns false. Think of it like running laps around a track or a music player repeating your favorite playlist!";
+        } else if (lowerQ.includes("variable") || lowerQ.includes("store")) {
+          englishText =
+            "A Variable is a named container in computer memory used to store data values like numbers, text, or true/false states. Think of it like a labeled box where you store items!";
+        } else if (lowerQ.includes("function") || lowerQ.includes("method")) {
+          englishText =
+            "A Function is a reusable block of code designed to perform a single specific task. Think of it like a recipe in a cookbook or a single button on a remote control!";
+        } else if (lowerQ.includes("error") || lowerQ.includes("bug") || lowerQ.includes("exception")) {
+          englishText =
+            "Syntax errors happen when instructions are incomplete or misformatted. Check for missing quotes, unmatched colons, or improper line indentation!";
+        } else {
+          englishText =
+            `Great question about "${userText}"! In computer science, we break down complex problems into step-by-step algorithmic instructions. Try practicing with a small code snippet in the workspace!`;
         }
 
         if (selectedLang !== "en") {

@@ -1,5 +1,9 @@
 node_modules/
 .env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
 backend-v2/out/
 backend-v3/out/
 out/
