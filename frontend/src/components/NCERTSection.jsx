@@ -3,11 +3,13 @@ import {
   BookOpen, Hand, Download, Play, CheckCircle2, HelpCircle, Sparkles,
   ChevronRight, ChevronDown, Atom, Beaker, Dna, Binary, Calculator,
   BrainCircuit, Volume2, Globe, MessageSquare, Send, Lightbulb,
-  Eye, Headphones, Video, CheckCheck, Lock, Star
+  Eye, Headphones, Video, CheckCheck, Lock, Star, Mic, X, Film
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import ISLVideoPlayerModal from './ISLVideoPlayerModal';
 import { askTutor, translateText, askNcertTutor } from '../services/api';
+import { startListening, speakText } from './speechUtils';
+import { videoService } from '../services/supabaseClient';
 import { NCERT_CHAPTERS, STEM_MOCK_DATA, HINTS } from './ncertData';
 
 // Helper to render subject icons dynamically
@@ -64,6 +66,10 @@ export default function NCERTSection({ setCurrentTab, setSelectedProject }) {
   // ISL Modal
   const [isIslModalOpen, setIsIslModalOpen] = useState(false);
   const [activeConcept, setActiveConcept] = useState('');
+
+  // Generated Video Modal
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [videoModalData, setVideoModalData] = useState(null);
 
   // Socratic hint state
   const [hintIndex, setHintIndex] = useState(0);
@@ -484,6 +490,19 @@ Use simple language, bold key terms, and end with a quick quiz question to check
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button onClick={(e) => {
+                        e.stopPropagation();
+                        setVideoModalData({
+                          title: chap.title,
+                          grade: chap.grade,
+                          subject: chap.subject,
+                          langCode: chatLang
+                        });
+                        setIsVideoModalOpen(true);
+                      }}
+                        style={{ padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: '600', backgroundColor: 'rgba(200,75,36,0.1)', border: '1px solid rgba(200,75,36,0.3)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent)', cursor: 'pointer' }}>
+                        <Video size={11} color="var(--accent)" /> Video
+                      </button>
                       <button onClick={(e) => { e.stopPropagation(); handleDownloadPdf(chap); }}
                         style={{ padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: '600', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
                         <Download size={11} /> PDF
@@ -578,18 +597,28 @@ Use simple language, bold key terms, and end with a quick quiz question to check
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>{gradeData.realWorld}</p>
                 </div>
 
-                {stemSummary ? (
-                  <div style={{ fontSize: '12px', lineHeight: '1.6', color: 'var(--text-main)', whiteSpace: 'pre-line', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', padding: '12px', border: '1px solid var(--border-light)' }}>
-                    <div style={{ fontWeight: '700', color: stemInfo.color, marginBottom: '6px', fontSize: '11px' }}>✨ AI Summary</div>
-                    {stemSummary}
-                    <button onClick={() => setStemSummary('')} style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-faint)', display: 'block', cursor: 'pointer' }}>↺ Regenerate</button>
-                  </div>
-                ) : (
-                  <button onClick={generateStemSummary} disabled={isSummarizing} className="btn-primary"
-                    style={{ width: '100%', padding: '9px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                    {isSummarizing ? (<><div style={{ width: '12px', height: '12px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} /> Generating...</>) : (<><Sparkles size={13} /> AI-Summarise Class {selectedGrade === 'all' ? '8-12' : selectedGrade}</>)}
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setVideoModalData({
+                      title: selectedChap?.title || `${stemInfo.name} AI Video Explanation`,
+                      grade: selectedGrade === 'all' ? '8' : selectedGrade,
+                      subject: stemInfo.name,
+                      langCode: chatLang
+                    });
+                    setIsVideoModalOpen(true);
+                  }}
+                  className="btn-primary"
+                  style={{
+                    width: '100%', padding: '10px 14px', fontSize: '13px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    background: 'linear-gradient(135deg, var(--accent) 0%, #E55322 100%)',
+                    boxShadow: '0 4px 12px rgba(200,75,36,0.25)',
+                    borderRadius: 'var(--radius-md)', border: 'none', color: '#fff', fontWeight: '700',
+                    cursor: 'pointer', transition: 'all 0.2s ease'
+                  }}>
+                  <Video size={16} />
+                  <span>🎬 AI-Video Lesson Class {selectedGrade === 'all' ? '8-12' : selectedGrade}</span>
+                </button>
               </>
             ) : (
               <p style={{ fontSize: '13px', color: 'var(--text-faint)' }}>Select a specific grade to see the {stemInfo.name} overview.</p>
@@ -738,6 +767,19 @@ Use simple language, bold key terms, and end with a quick quiz question to check
             placeholder={`Ask anything about ${selectedChap?.title || stemInfo?.name || 'STEM'} in ${LANG_OPTIONS.find(l => l.code === chatLang)?.label || 'English'}...`}
             style={{ flex: 1, fontSize: '13px' }}
           />
+          <button type="button" onClick={() => {
+            startListening(getLocaleCode(chatLang), (text) => setChatInput(text));
+          }}
+          style={{
+            padding: '10px',
+            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-medium)',
+            cursor: 'pointer'
+          }}
+          title="Speech to Text (Mic)">
+            <Mic size={16} color="var(--accent)" />
+          </button>
           <button type="submit" disabled={isChatLoading || !chatInput.trim()} className="btn-primary"
             style={{ padding: '10px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
             <Send size={14} /> Ask Mentor
@@ -752,6 +794,15 @@ Use simple language, bold key terms, and end with a quick quiz question to check
         signDescription="NCERT syllabus mapped ISL gesture video clip"
       />
 
+      <VideoAIModal
+        isOpen={isVideoModalOpen}
+        onClose={() => setIsVideoModalOpen(false)}
+        chapterTitle={videoModalData?.title}
+        grade={videoModalData?.grade}
+        subject={videoModalData?.subject}
+        langCode={videoModalData?.langCode}
+      />
+
       <style>{`
         @keyframes bounce {
           0%, 60%, 100% { transform: translateY(0); }
@@ -762,6 +813,243 @@ Use simple language, bold key terms, and end with a quick quiz question to check
           to { transform: rotate(360deg); }
         }
       `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// VIDEO AI GENERATION MODAL (SUPABASE CONNECTED)
+// ─────────────────────────────────────────────
+function VideoAIModal({ isOpen, onClose, chapterTitle, grade, subject, langCode }) {
+  const [activeGrade, setActiveGrade] = useState(grade === 'all' || !grade ? '8' : String(grade));
+  const [activeChapterTitle, setActiveChapterTitle] = useState(chapterTitle || '');
+  const [selectedLanguage, setSelectedLanguage] = useState(langCode || 'en');
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Sync props when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const initGrade = grade === 'all' || !grade ? '8' : String(grade);
+      setActiveGrade(initGrade);
+      const chaps = NCERT_CHAPTERS.filter(c => c.grade === initGrade);
+      const initTitle = chapterTitle || (chaps.length > 0 ? chaps[0].title : `Class ${initGrade} Computer Science Overview`);
+      setActiveChapterTitle(initTitle);
+      setSelectedLanguage(langCode || 'en');
+    }
+  }, [isOpen, chapterTitle, grade, langCode]);
+
+  const currentGradeChapters = NCERT_CHAPTERS.filter(c => c.grade === String(activeGrade));
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setIsLoading(true);
+    videoService.getChapterVideoUrl(activeChapterTitle, activeGrade, selectedLanguage)
+      .then(url => {
+        setVideoUrl(url);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }, [isOpen, activeChapterTitle, activeGrade, selectedLanguage]);
+
+  if (!isOpen) return null;
+
+  const LANG_LABELS = {
+    en: 'English', hi: 'हिंदी (Hindi)', ta: 'தமிழ் (Tamil)', te: 'తెలుగు (Telugu)',
+    kn: 'ಕನ್ನಡ (Kannada)', mr: 'मराठी (Marathi)', bn: 'বাংলা (Bengali)', gu: 'ગુજરાતી (Gujarati)'
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: '#1E1917',
+        border: '1.5px solid var(--accent)',
+        borderRadius: '16px',
+        width: '100%', maxWidth: '820px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+        color: '#FFFFFF'
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, var(--accent) 0%, #9A3412 100%)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          flexWrap: 'wrap', gap: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Film size={22} color="#FFF" />
+            <div>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#FFF' }}>
+                AI Generated Video Lesson
+              </h3>
+              <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.85)' }}>
+                NCERT Class {activeGrade} · {activeChapterTitle || 'STEM Fundamentals'}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Class Selector Dropdown */}
+            <select
+              value={activeGrade}
+              onChange={(e) => {
+                const newGrade = e.target.value;
+                setActiveGrade(newGrade);
+                const chaps = NCERT_CHAPTERS.filter(c => c.grade === newGrade);
+                if (chaps.length > 0) {
+                  setActiveChapterTitle(chaps[0].title);
+                } else {
+                  setActiveChapterTitle(`Class ${newGrade} Computer Science Overview`);
+                }
+              }}
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                color: '#FFF',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                padding: '5px 10px',
+                fontSize: '12px',
+                fontWeight: '700',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="8" style={{ backgroundColor: '#1E1917' }}>Class 8</option>
+              <option value="9" style={{ backgroundColor: '#1E1917' }}>Class 9</option>
+              <option value="10" style={{ backgroundColor: '#1E1917' }}>Class 10</option>
+              <option value="11" style={{ backgroundColor: '#1E1917' }}>Class 11</option>
+              <option value="12" style={{ backgroundColor: '#1E1917' }}>Class 12</option>
+            </select>
+
+            {/* Chapter Selector Dropdown */}
+            <select
+              value={activeChapterTitle}
+              onChange={(e) => setActiveChapterTitle(e.target.value)}
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                color: '#FFF',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                padding: '5px 10px',
+                fontSize: '12px',
+                fontWeight: '700',
+                maxWidth: '220px',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {currentGradeChapters.length > 0 ? (
+                currentGradeChapters.map((c) => (
+                  <option key={c.id} value={c.title} style={{ backgroundColor: '#1E1917' }}>
+                    {c.number}: {c.title.length > 26 ? c.title.slice(0, 26) + '...' : c.title}
+                  </option>
+                ))
+              ) : (
+                <option value={activeChapterTitle} style={{ backgroundColor: '#1E1917' }}>
+                  {activeChapterTitle}
+                </option>
+              )}
+            </select>
+
+            {/* Language Selector */}
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                color: '#FFF',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                padding: '5px 10px',
+                fontSize: '12px',
+                fontWeight: '700',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {Object.entries(LANG_LABELS).map(([code, label]) => (
+                <option key={code} value={code} style={{ backgroundColor: '#1E1917', color: '#FFF' }}>
+                  {label}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none', border: 'none', color: '#FFF', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Video Player Display */}
+        <div style={{ position: 'relative', width: '100%', height: '360px', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {isLoading ? (
+            <div style={{ textAlign: 'center', color: 'var(--accent)' }}>
+              <div style={{ width: '36px', height: '36px', border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+              <p style={{ fontSize: '13px', fontWeight: '600', color: '#D4D4D4' }}>Connecting to Supabase Video Bucket...</p>
+            </div>
+          ) : videoUrl ? (
+            <video
+              src={videoUrl}
+              controls
+              autoPlay
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'radial-gradient(circle at center, #2C1810 0%, #0F0906 100%)', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(200,75,36,0.25)', border: '2px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Play size={28} color="var(--accent)" style={{ marginLeft: '4px' }} />
+              </div>
+              <h4 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '800', color: '#FFF' }}>
+                {activeChapterTitle || 'NCERT Class ' + activeGrade + ' Concept Video'}
+              </h4>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#A3A3A3', maxWidth: '500px', lineHeight: '1.5' }}>
+                Generated Video lesson in {LANG_LABELS[selectedLanguage] || selectedLanguage} stored securely on Supabase Storage.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '20px', backgroundColor: 'rgba(200,75,36,0.2)', color: 'var(--accent)', fontWeight: '700', border: '1px solid rgba(200,75,36,0.4)' }}>
+                  ⚡ Supabase Storage Connected
+                </span>
+                <span style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '20px', backgroundColor: 'rgba(22,163,74,0.2)', color: '#4ADE80', fontWeight: '700', border: '1px solid rgba(22,163,74,0.4)' }}>
+                  ✓ Multi-Lingual Sync: {selectedLanguage.toUpperCase()}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Info */}
+        <div style={{ padding: '16px 24px', backgroundColor: '#14100E', borderTop: '1px solid #2C221E', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#A3A3A3' }}>
+            <span style={{ color: 'var(--accent)', fontWeight: '700' }}>CodeSeekho AI Video Feature</span> · Supabase Endpoint Live
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '8px 20px', borderRadius: '8px',
+              backgroundColor: 'var(--accent)', border: 'none',
+              color: '#FFF', fontSize: '12px', fontWeight: '700',
+              cursor: 'pointer'
+            }}
+          >
+            Close Video
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

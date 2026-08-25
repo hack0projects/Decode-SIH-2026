@@ -14,10 +14,14 @@ import {
   UserCheck
 } from 'lucide-react';
 import { authService } from '../services/supabaseClient';
+import ISLVideoPlayerModal from './ISLVideoPlayerModal';
 
 export default function LandingPage({ setCurrentTab, setIslMode, islMode, setUserRole, setUserName }) {
   const [activeRoleTab, setActiveRoleTab] = useState('student');
   const [email, setEmail] = useState('student@school.edu.in');
+  const [isIslModalOpen, setIsIslModalOpen] = useState(false);
+  const [activeConcept, setActiveConcept] = useState('While Loop (count < 5)');
+  const [activeText, setActiveText] = useState('Repeat instructions while count is less than 5');
   const [password, setPassword] = useState('password123');
   const [fullName, setFullName] = useState('');
   const [localIsl, setLocalIsl] = useState(islMode);
@@ -584,28 +588,51 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode, setUse
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
               Concept: <code style={{ backgroundColor: 'var(--bg-card)', padding: '2px 6px', borderRadius: '4px' }}>while (count &lt; 5)</code>
             </p>
-            <div style={{
-              backgroundColor: '#000000',
-              borderRadius: 'var(--radius-md)',
-              height: '180px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justify: 'center',
-              color: '#FFFFFF',
-              position: 'relative'
-            }}>
-              <Play size={36} style={{ marginBottom: '8px', cursor: 'pointer' }} />
-              <span style={{ fontSize: '13px', opacity: 0.9 }}>Click to play ISL gesture explanation</span>
+            <div
+              onClick={() => {
+                setActiveConcept('While Loop (count < 5)');
+                setActiveText('Repeat code execution while condition evaluates to True');
+                setIsIslModalOpen(true);
+              }}
+              style={{
+                backgroundColor: '#000000',
+                borderRadius: 'var(--radius-md)',
+                height: '190px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FFFFFF',
+                position: 'relative',
+                cursor: 'pointer',
+                border: '2px solid var(--accent)',
+                boxShadow: '0 8px 24px rgba(200,75,36,0.25)',
+                transition: 'all 0.2s ease'
+              }}
+              title="Click to play ISL Video Gesture Clip"
+            >
+              <div style={{
+                width: '52px', height: '52px', borderRadius: '50%',
+                backgroundColor: 'rgba(200,75,36,0.3)', border: '2px solid var(--accent)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '10px'
+              }}>
+                <Play size={26} color="var(--accent)" style={{ marginLeft: '4px' }} />
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: '700', color: '#FFF' }}>Play ISL Gesture Video Clip</span>
+              <span style={{ fontSize: '12px', color: '#A3A3A3', marginTop: '4px' }}>Click to launch interactive sign player</span>
               <div style={{
                 position: 'absolute',
                 bottom: '10px',
                 left: '10px',
                 right: '10px',
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                padding: '6px',
-                borderRadius: '4px',
-                fontSize: '11px'
+                backgroundColor: 'rgba(200,75,36,0.3)',
+                border: '1px solid rgba(200,75,36,0.5)',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                color: '#FFEDD5',
+                fontWeight: '600'
               }}>
                 🤟 Subtitle: "Repeat action while condition remains True"
               </div>
@@ -613,6 +640,13 @@ export default function LandingPage({ setCurrentTab, setIslMode, islMode, setUse
           </div>
         </div>
       </div>
+
+      <ISLVideoPlayerModal
+        isOpen={isIslModalOpen}
+        onClose={() => setIsIslModalOpen(false)}
+        conceptName={activeConcept}
+        fullText={activeText}
+      />
     </div>
   );
 }
