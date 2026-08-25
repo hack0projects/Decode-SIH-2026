@@ -116,16 +116,32 @@ export default function AIMentorPage({ currentLang }) {
 
     try {
       const res = await askTutor(userText, "Aarav");
-      const tutorReply = res?.reply || res?.response || res?.answer;
+      console.log("🔥 FRONTEND ASK-TUTOR RESPONSE:", res);
 
-      if (tutorReply && !res?.error) {
+      const tutorReply = res?.answer || res?.reply || res?.response;
+
+      if (tutorReply && tutorReply.trim()) {
+        // ✅ Backend returned a valid answer — display it regardless of success flag
         englishText = res?.englishReply || tutorReply;
-        displayText =
-          selectedLang !== "en" && !res?.englishReply
-            ? await translateReply(tutorReply, selectedLang, "Aarav")
-            : tutorReply;
+
+        if (selectedLang !== "en" && !res?.englishReply && !res?.isTranslated) {
+          try {
+            const trans = await translateReply(tutorReply, selectedLang, "Aarav");
+            // Only use translated text if it's a non-empty string, else show English
+            displayText = (trans && typeof trans === "string" && trans.trim()) ? trans : tutorReply;
+          } catch {
+            displayText = tutorReply;
+          }
+        } else {
+          displayText = tutorReply;
+        }
+
+        // Final safety net: never render blank
+        if (!displayText || !displayText.trim()) {
+          displayText = tutorReply;
+        }
       } else {
-        // Smart Socratic explanation fallback for coding concepts
+        // 🔁 Backend offline/erroring — use local Socratic fallback
         const lowerQ = userText.toLowerCase();
         if (lowerQ.includes("data structure") || lowerQ.includes("structure")) {
           englishText =
@@ -148,8 +164,12 @@ export default function AIMentorPage({ currentLang }) {
         }
 
         if (selectedLang !== "en") {
-          const trans = await translateText(englishText, selectedLang, "Aarav");
-          displayText = trans?.translatedText || englishText;
+          try {
+            const trans = await translateText(englishText, selectedLang, "Aarav");
+            displayText = (trans?.translatedText && trans.translatedText.trim()) ? trans.translatedText : englishText;
+          } catch {
+            displayText = englishText;
+          }
         } else {
           displayText = englishText;
         }
@@ -159,6 +179,11 @@ export default function AIMentorPage({ currentLang }) {
       englishText =
         "Something went wrong reaching the mentor. Please try asking again.";
       displayText = englishText;
+    }
+
+    // Absolute last-resort guard — never set an empty message bubble
+    if (!displayText || !displayText.trim()) {
+      displayText = englishText || "I'm processing your question. Please try again in a moment!";
     }
 
     setMessages((prev) => [

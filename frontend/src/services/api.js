@@ -83,7 +83,9 @@ export async function askTutor(question, studentName = 'Aarav') {
   try {
     const response = await fetch(`${BASE_URL}/ask-tutor`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         question,
         studentName
@@ -91,9 +93,21 @@ export async function askTutor(question, studentName = 'Aarav') {
     });
 
     const data = await response.json();
-    return data; // returns { answer, success }
+
+    console.log("ASK-TUTOR STATUS:", response.status);
+    console.log("ASK-TUTOR DATA:", data);
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error || `Backend returned ${response.status}`
+      );
+    }
+
+    return data;
+
   } catch (err) {
     console.error('API Error in /ask-tutor:', err);
+
     return {
       success: false,
       answer: 'AI Tutor network connection error.',
