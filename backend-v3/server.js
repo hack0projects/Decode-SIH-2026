@@ -428,9 +428,21 @@ app.post('/generate-script', async (req, res) => {
   
   try {
     const prompt = buildScriptPrompt(raw_text.trim(), script_language || 'English');
-    // Using a dummy jobId for logging, we don't emit progress to the UI here since it's a blocking await
     const script = await generateScriptWithRotation(prompt, () => {}, 'script-only');
     const markdown = scriptToMarkdown(script);
+    
+    // Save to Supabase
+    const jobId = uuidv4();
+    const supabasePath = `scripts/v3_${jobId}.md`;
+    await supabase.storage.from(SUPABASE_BUCKET).upload(supabasePath, Buffer.from(markdown, 'utf-8'), { contentType: 'text/markdown', upsert: false });
+    const { data: urlData } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(supabasePath);
+    await supabase.from(SUPABASE_TABLE).insert({
+      job_id: jobId, title: script.title, language: script.language,
+      scene_count: script.scenes.length, script_json: script,
+      video_url: urlData.publicUrl, storage_path: supabasePath,
+      status: 'script_only', created_at: new Date().toISOString(),
+    });
+    
     return res.status(200).json({ success: true, markdown });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
@@ -448,6 +460,18 @@ app.post('/generate-script-from-file', upload.single('file'), async (req, res) =
     const prompt = buildScriptPrompt(rawText, script_language);
     const script = await generateScriptWithRotation(prompt, () => {}, 'script-only');
     const markdown = scriptToMarkdown(script);
+    
+    // Save to Supabase
+    const jobId = uuidv4();
+    const supabasePath = `scripts/v3_${jobId}.md`;
+    await supabase.storage.from(SUPABASE_BUCKET).upload(supabasePath, Buffer.from(markdown, 'utf-8'), { contentType: 'text/markdown', upsert: false });
+    const { data: urlData } = supabase.storage.from(SUPABASE_BUCKET).getPublicUrl(supabasePath);
+    await supabase.from(SUPABASE_TABLE).insert({
+      job_id: jobId, title: script.title, language: script.language,
+      scene_count: script.scenes.length, script_json: script,
+      video_url: urlData.publicUrl, storage_path: supabasePath,
+      status: 'script_only', created_at: new Date().toISOString(),
+    });
     
     await fs.unlink(uploadedPath).catch(()=>{});
     return res.status(200).json({ success: true, markdown });
@@ -978,7 +1002,7 @@ app.get('/jobs/:jobId', async (req, res) => {
 
 app.get('/jobs', async (_req, res) => {
   const { data, error } = await supabase.from(SUPABASE_TABLE)
-    .select('job_id,title,language,scene_count,video_url,created_at')
+    .select('job_id,title,language,scene_count,video_url,created_at,status')
     .order('created_at', { ascending: false }).limit(50);
   if (error) return res.status(500).json({ error: error.message });
   return res.json({ success: true, count: data.length, jobs: data });

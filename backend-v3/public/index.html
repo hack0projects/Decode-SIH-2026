@@ -168,6 +168,7 @@ textarea::placeholder{color:#4b5563;}
     <button class="tab active" onclick="switchTab('upload')">📎 Upload File</button>
     <button class="tab" onclick="switchTab('text')">✍️ Type Text</button>
     <button class="tab" onclick="switchTab('jobs')">🎬 My Videos</button>
+    <button class="tab" onclick="switchTab('scripts')">📄 My Scripts</button>
     <button class="tab" onclick="switchTab('credits')">⚡ AI Credits</button>
   </div>
 
@@ -237,6 +238,11 @@ textarea::placeholder{color:#4b5563;}
     <div class="jobs-grid" id="jobsGrid"><div class="no-jobs">Loading...</div></div>
   </div>
 
+  <div class="panel" id="panel-scripts">
+    <button class="refresh-btn" onclick="loadScripts()">🔄 Refresh</button>
+    <div class="jobs-grid" id="scriptsGrid"><div class="no-jobs">Loading...</div></div>
+  </div>
+
   <!-- CREDITS PANEL -->
   <div class="panel" id="panel-credits">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -295,10 +301,12 @@ fetch('/health').then(r=>r.json()).then(d=>{
 });
 
 function switchTab(t) {
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['upload','text','jobs','credits'][i]===t));
+  const tabs = ['upload', 'text', 'jobs', 'scripts', 'credits'];
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+t).classList.add('active');
   if(t==='jobs') loadJobs();
+  if(t==='scripts') loadScripts();
   if(t==='credits') loadCredits();
 }
 function onFile(inp){
@@ -431,17 +439,39 @@ async function loadJobs(){
   g.innerHTML='<div class="no-jobs">Loading...</div>';
   try{
     const d=await(await fetch('/jobs')).json();
-    if(!d.jobs?.length){g.innerHTML='<div class="no-jobs">No avatar videos yet. Generate your first one!</div>';return;}
-    g.innerHTML=d.jobs.map(j=>`<div class="job-card">
+    const videos = d.jobs?.filter(j => j.status !== 'script_only') || [];
+    if(!videos.length){g.innerHTML='<div class="no-jobs">No avatar videos yet. Generate your first one!</div>';return;}
+    g.innerHTML=videos.map(j=>{
+      return `<div class="job-card">
       <div class="jthumb">🎭</div>
       <div class="jinfo">
-        <div class="jtitle">${j.title}<span class="jeng">Avatar</span></div>
-        <div class="jmeta">${j.scene_count} scenes &nbsp;·&nbsp; ${new Date(j.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</div>
+        <div class="jtitle">${j.title}<span class="jeng">Avatar Video</span></div>
+        <div class="jmeta">${j.scene_count} topics &nbsp;·&nbsp; ${new Date(j.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</div>
       </div>
       <a href="${j.video_url}" target="_blank" class="jwatch">▶ Watch</a>
-    </div>`).join('');
-  } catch(e){g.innerHTML='<div class="no-jobs">Could not load. Is server running on :3002?</div>';}
+    </div>`}).join('');
+  } catch(e){g.innerHTML='<div class="no-jobs">Could not load. Is server running?</div>';}
 }
+
+async function loadScripts(){
+  const g=document.getElementById('scriptsGrid');
+  g.innerHTML='<div class="no-jobs">Loading...</div>';
+  try{
+    const d=await(await fetch('/jobs')).json();
+    const scripts = d.jobs?.filter(j => j.status === 'script_only') || [];
+    if(!scripts.length){g.innerHTML='<div class="no-jobs">No script documents yet. Generate your first one!</div>';return;}
+    g.innerHTML=scripts.map(j=>{
+      return `<div class="job-card">
+      <div class="jthumb" style="background:rgba(59,130,246,0.1)">📄</div>
+      <div class="jinfo">
+        <div class="jtitle">${j.title}<span class="jeng" style="background:rgba(59,130,246,0.1);color:#3b82f6;border-color:rgba(59,130,246,0.2);">Script Document</span></div>
+        <div class="jmeta">${j.scene_count} topics &nbsp;·&nbsp; ${new Date(j.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</div>
+      </div>
+      <a href="${j.video_url}" target="_blank" class="jwatch" style="background:rgba(59,130,246,0.1);color:#3b82f6;">📄 Read Script</a>
+    </div>`}).join('');
+  } catch(e){g.innerHTML='<div class="no-jobs">Could not load. Is server running?</div>';}
+}
+
 function copyUrl(){navigator.clipboard.writeText(vidUrl).then(()=>{const b=document.querySelector('.copy-btn');b.textContent='✅ Copied!';setTimeout(()=>b.textContent='📋 Copy Video URL',2000);});}
 function show(id){document.getElementById(id).classList.add('show');}
 function hide(id){document.getElementById(id).classList.remove('show');}
