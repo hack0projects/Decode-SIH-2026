@@ -1,23 +1,20 @@
 {
-  "name": "codeseekho-video-engine",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "CodeSeekho — Dynamic Programmatic Educational Video Engine powered by Remotion",
-  "license": "MIT",
-  "type": "module",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "npx remotion studio src/Root.jsx",
-    "build": "npx remotion render src/Root.jsx CodeSeekho-PythonLoops out/PythonLoops.mp4",
-    "upgrade": "npx remotion upgrade"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@remotion/cli": "4.0.285",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-syntax-highlighter": "^15.5.0",
-    "remotion": "4.0.285"
-  },
-  "devDependencies": {
-    "@types/react": "18.2.0",
-    "@types/react-syntax-highlighter": "^15.5.13"
+    "axios": "^1.19.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.22.0"
   }
 }
