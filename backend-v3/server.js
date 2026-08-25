@@ -448,6 +448,9 @@ app.post('/generate-script-from-file', upload.single('file'), async (req, res) =
     const prompt = buildScriptPrompt(rawText, script_language);
     const script = await generateScriptWithRotation(prompt, () => {}, 'script-only');
     const markdown = scriptToMarkdown(script);
+    
+    await fs.unlink(uploadedPath).catch(()=>{});
+    return res.status(200).json({ success: true, markdown });
   } catch (err) {
     try { await fs.unlink(uploadedPath); } catch {}
     return res.status(500).json({ success: false, error: err.message });
