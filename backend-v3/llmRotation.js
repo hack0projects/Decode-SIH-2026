@@ -26,7 +26,7 @@ function truncatePrompt(prompt, maxChars) {
 // ─── 0. Gemini — via direct REST (key works as query param) ✅ ────────────────
 const callGemini = async (prompt) => {
   if (!process.env.GEMINI_API_KEY) throw new Error("No Gemini key");
-  for (const modelName of ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]) {
+  for (const modelName of ["gemini-3.6-flash", "gemini-3.5-flash"]) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
       const res = await fetch(url, {
@@ -111,7 +111,7 @@ const callOpenRouterDeepseek= (p) => callOpenRouter(p, "deepseek/deepseek-r1:fre
 // ─── MAIN ROTATION — Cloudflare FIRST (confirmed working) ─────────────────────
 export async function generateScriptWithRotation(prompt, emitProgress, jobId) {
   const models = [
-    { name: "Gemini 2.5 Flash",        fn: callGemini },
+    { name: "Gemini 3.6 Flash",        fn: callGemini },
     { name: "Cloudflare Llama 3.1",    fn: callCloudflare },
     { name: "Cloudflare Mistral 7B",   fn: callCloudflareMistral },
     { name: "Groq Llama 3.3 70B",      fn: callGroqLlama },
