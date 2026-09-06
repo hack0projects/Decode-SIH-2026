@@ -23,6 +23,30 @@ function truncatePrompt(prompt, maxChars) {
   return prompt.slice(0, maxChars);
 }
 
+// ─── 0. Gemini — via direct REST (key works as query param) ✅ ────────────────
+const callGemini = async (prompt) => {
+  if (!process.env.GEMINI_API_KEY) throw new Error("No Gemini key");
+  for (const modelName of ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: truncatePrompt(prompt, 10000) }] }] })
+      });
+      if (!res.ok) { const err = await res.text(); throw new Error(`Gemini ${modelName} HTTP ${res.status}: ${err.slice(0,100)}`); }
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+      throw new Error("Empty Gemini response");
+    } catch(e) {
+      console.warn(`[LLM] Gemini ${modelName} failed: ${e.message?.slice(0,100)}`);
+    }
+  }
+  throw new Error("All Gemini models failed");
+};
+
+
 // ─── 1. Cloudflare AI — CONFIRMED WORKING ✅ ─────────────────────────────────
 const callCloudflare = async (prompt) => {
   const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
@@ -100,14 +124,14 @@ const callGemini = async (prompt) => {
 // ─── MAIN ROTATION — Cloudflare FIRST (confirmed working) ─────────────────────
 export async function generateScriptWithRotation(prompt, emitProgress, jobId) {
   const models = [
-    { name: "Cloudflare Llama 3.1",   fn: callCloudflare },
-    { name: "Cloudflare Mistral 7B",  fn: callCloudflareMistral },
-    { name: "Groq Llama 3.3 70B",     fn: callGroqLlama },
-    { name: "Groq Llama 3.1 8B",      fn: callGroqLlama8 },
-    { name: "OpenRouter Gemma-2 9B",  fn: callOpenRouterGemma },
-    { name: "OpenRouter Phi-3 Mini",  fn: callOpenRouterPhi },
-    { name: "OpenRouter DeepSeek R1", fn: callOpenRouterDeepseek },
-    { name: "Gemini Flash",           fn: callGemini },
+    { name: "Gemini 2.5 Flash",        fn: callGemini },
+    { name: "Cloudflare Llama 3.1",    fn: callCloudflare },
+    { name: "Cloudflare Mistral 7B",   fn: callCloudflareMistral },
+    { name: "Groq Llama 3.3 70B",      fn: callGroqLlama },
+    { name: "Groq Llama 3.1 8B",       fn: callGroqLlama8 },
+    { name: "OpenRouter Gemma-2 9B",   fn: callOpenRouterGemma },
+    { name: "OpenRouter Phi-3 Mini",   fn: callOpenRouterPhi },
+    { name: "OpenRouter DeepSeek R1",  fn: callOpenRouterDeepseek },
   ];
 
   for (const model of models) {
