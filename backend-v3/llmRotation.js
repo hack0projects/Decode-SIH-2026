@@ -107,19 +107,6 @@ const callOpenRouterGemma   = (p) => callOpenRouter(p, "google/gemma-2-9b-it:fre
 const callOpenRouterPhi     = (p) => callOpenRouter(p, "microsoft/phi-3-mini-128k-instruct:free");
 const callOpenRouterDeepseek= (p) => callOpenRouter(p, "deepseek/deepseek-r1:free");
 
-// ─── 5. Gemini — kept but last since key format is wrong ─────────────────────
-const callGemini = async (prompt) => {
-  if (!process.env.GEMINI_API_KEY) throw new Error("No Gemini key");
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  for (const modelName of ["gemini-2.0-flash", "gemini-1.5-flash"]) {
-    try {
-      const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      return result.response.text();
-    } catch(e) { /* try next */ }
-  }
-  throw new Error("All Gemini models failed");
-};
 
 // ─── MAIN ROTATION — Cloudflare FIRST (confirmed working) ─────────────────────
 export async function generateScriptWithRotation(prompt, emitProgress, jobId) {
