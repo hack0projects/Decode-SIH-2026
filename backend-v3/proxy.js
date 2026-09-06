@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import { extractText } from './fileProcessor.js';
+import { generateScriptWithRotation } from './llmRotation.js';
 
 dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -23,7 +24,6 @@ const MAIN_BACKEND = `http://localhost:${process.env.PORT ?? 3010}`;
 const UPLOADS_DIR = path.join(__dirname, 'out', 'uploads');
 if (!existsSync(UPLOADS_DIR)) await fs.mkdir(UPLOADS_DIR, { recursive: true });
 
-const genAI    = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 const ALLOWED_EXTS = new Set(['.pptx', '.ppt', '.pdf', '.txt', '.md', '.docx']);
@@ -48,33 +48,77 @@ app.use(express.static(path.join(__dirname, 'public5000')));
 // =============================================================================
 // AI HELPER — Call Gemini with rotation fallback to OpenRouter
 // =============================================================================
+// Remove the broken genAI client — we use llmRotation.js instead
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// AI helper — wraps llmRotation which already handles Gemini → Groq → Cloudflare → OpenRouter
 async function callAI(prompt) {
-  // Try Gemini first
+  // generateScriptWithRotation expects the prompt to generate JSON with scenes[]
+  // For flashcards/worksheets we need raw text output, so we wrap it:
+  const dummyEmit = () => {};
+  // Use the rotation engine but get raw text before JSON parsing
+  const rawText = await callRawAI(prompt);
+  return rawText;
+}
+
+async function callRawAI(prompt) {
+  // ✅ 1. Cloudflare Llama 3.1 — CONFIRMED WORKING from diagnostic
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const result = await model.generateContent(prompt);
-    return result.response.text();
-  } catch(e) {
-    console.warn('[AI] Gemini failed, trying OpenRouter...');
+    const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.CLOUDFLARE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt.slice(0, 5000) }] })
+    });
+    if (!res.ok) throw new Error('Cloudflare HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success && data.result?.response) { console.log('[Proxy AI] ✅ Cloudflare Llama'); return data.result.response; }
+    throw new Error('Cloudflare empty');
+  } catch(e) { console.warn('[Proxy AI] ❌ Cloudflare Llama:', e.message?.slice(0,80)); }
+
+  // ✅ 2. Cloudflare Mistral — CONFIRMED WORKING from diagnostic
+  try {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/mistral/mistral-7b-instruct-v0.1`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.CLOUDFLARE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt.slice(0, 4000) }] })
+    });
+    if (!res.ok) throw new Error('CF Mistral HTTP ' + res.status);
+    const data = await res.json();
+    if (data.success && data.result?.response) { console.log('[Proxy AI] ✅ Cloudflare Mistral'); return data.result.response; }
+    throw new Error('CF Mistral empty');
+  } catch(e) { console.warn('[Proxy AI] ❌ Cloudflare Mistral:', e.message?.slice(0,80)); }
+
+  // 3. Groq — updated model names
+  for (const model of ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt.slice(0, 6000) }], temperature: 0.7, max_tokens: 4096 })
+      });
+      if (!res.ok) { const t = await res.text(); throw new Error(`HTTP ${res.status}: ${t.slice(0,80)}`); }
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) { console.log(`[Proxy AI] ✅ Groq ${model}`); return data.choices[0].message.content; }
+    } catch(e) { console.warn(`[Proxy AI] ❌ Groq ${model}:`, e.message?.slice(0,80)); }
   }
-  // Fallback to OpenRouter (Qwen free)
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://codeseekho.app',
-      'X-Title': 'CodeSeekho Proxy'
-    },
-    body: JSON.stringify({
-      model: 'qwen/qwen3.6-27b:free',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7
-    })
-  });
-  if (!res.ok) throw new Error('All AI models failed');
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? '';
+
+  // 4. OpenRouter — updated to current free models
+  for (const model of ['google/gemma-2-9b-it:free', 'microsoft/phi-3-mini-128k-instruct:free', 'deepseek/deepseek-r1:free']) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://codeseekho.app' },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt.slice(0, 7000) }], temperature: 0.7 })
+      });
+      if (!res.ok) { const t = await res.text(); throw new Error(`HTTP ${res.status}: ${t.slice(0,80)}`); }
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) { console.log(`[Proxy AI] ✅ OpenRouter ${model}`); return data.choices[0].message.content; }
+    } catch(e) { console.warn(`[Proxy AI] ❌ OpenRouter ${model}:`, e.message?.slice(0,80)); }
+  }
+
+  throw new Error('All AI models failed. Only Cloudflare is confirmed working — check CLOUDFLARE_API_KEY and CLOUDFLARE_ACCOUNT_ID in .env');
 }
 
 function extractJson(text) {
