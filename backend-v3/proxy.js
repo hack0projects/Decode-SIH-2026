@@ -62,7 +62,24 @@ async function callAI(prompt) {
 }
 
 async function callRawAI(prompt) {
-  // ✅ 1. Cloudflare Llama 3.1 — CONFIRMED WORKING from diagnostic
+  // ✅ 0. Gemini 2.5 Flash — NOW WORKING AND BEST FOR LARGE FILES
+  for (const modelName of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Send a large chunk for Gemini since it supports it!
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt.slice(0, 60000) }] }] })
+      });
+      if (!res.ok) { const err = await res.text(); throw new Error(`Gemini HTTP ${res.status}`); }
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) { console.log(`[Proxy AI] ✅ ${modelName}`); return text; }
+    } catch(e) { console.warn(`[Proxy AI] ❌ ${modelName}:`, e.message?.slice(0,80)); }
+  }
+
+  // ✅ 1. Cloudflare Llama 3.1
   try {
     const url = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
     const res = await fetch(url, {
