@@ -17,7 +17,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient }  from '@supabase/supabase-js';
 import { extractText }   from './fileProcessor.js';
 import { generateSpeech, getVoiceStatus } from './voiceGenerator.js';
-import { generateScriptWithRotation } from './llmRotation.js';
+import { generateScriptWithRotation, callRawAIRotation, extractJson } from './llmRotation.js';
 
 dotenv.config();
 const execAsync = promisify(exec);
@@ -36,8 +36,11 @@ const SUPABASE_BUCKET = 'sih_videos';
 const SUPABASE_TABLE  = 'videos';
 const ALLOWED_SCENE_TYPES       = new Set(['intro', 'code', 'visual']);
 const ALLOWED_VISUAL_ANIMATIONS = new Set(['forLoopIterator', 'whileCounter']);
-const DID_API_KEY = process.env.DID_API_KEY?.trim();
-const HF_API_KEY  = process.env.HUGGINGFACE_API_KEY?.trim();
+const DID_API_KEY          = process.env.DID_API_KEY?.trim();
+const HEYGEN_API_KEY       = process.env.HEYGEN_API_KEY?.trim();
+const REPLICATE_API_TOKEN  = process.env.REPLICATE_API_TOKEN?.trim();
+const HF_API_KEY           = process.env.HUGGINGFACE_API_KEY?.trim();
+const INDIAN_AVATAR_IMAGE  = process.env.INDIAN_AVATAR_IMAGE || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop';
 
 const genAI    = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -61,8 +64,9 @@ const upload = multer({
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/study-tools', express.static(path.join(__dirname, 'public5000')));
 app.use('/audio', express.static(AUDIO_DIR));
 
 // =============================================================================
@@ -128,14 +132,21 @@ app.get('/health', (_req, res) => {
   res.json({
     status: 'ok', service: 'CodeSeekho V2 -- AI Avatar', port: PORT,
     avatar: {
-      did:           DID_API_KEY ? 'Active' : 'No key',
-      sadtalker:     HF_API_KEY  ? 'Active (HuggingFace)' : 'No HF key',
-      remotionAvatar:'Always active',
-      using: DID_API_KEY ? 'D-ID -> SadTalker -> Remotion Avatar'
-           : HF_API_KEY  ? 'SadTalker -> Remotion Avatar'
-           : 'Remotion Avatar (animated)',
+      did:            DID_API_KEY ? 'Active (Indian Educator)' : 'No key',
+      heygen:         HEYGEN_API_KEY ? 'Configured' : 'No key',
+      replicate:      REPLICATE_API_TOKEN ? 'Active' : 'No key',
+      sadtalker:      HF_API_KEY ? 'Active (HuggingFace)' : 'No HF key',
+      remotionAvatar: 'Always active (Indian AI Educator)',
+      using: DID_API_KEY ? 'D-ID (Indian Educator) -> Replicate -> Remotion Avatar'
+           : REPLICATE_API_TOKEN ? 'Replicate -> Remotion Avatar'
+           : 'Remotion Avatar (Indian AI Educator)',
     },
-    voices: { using: voice.activeEngine, elevenlabs: voice.elevenlabs, edgeTTS: true },
+    voices: {
+      using: voice.activeEngine,
+      sarvam: voice.sarvam,
+      elevenlabs: voice.elevenlabs,
+      edgeTTS: true,
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -268,12 +279,16 @@ Your job is to READ the full INPUT TEXT thoroughly and convert it into a deeply 
 - Uses real-world analogies and examples to explain abstract concepts
 - Structures content progressively (simple → complex → application)
 
-CRITICAL TRANSLATION RULE:
-The ENTIRE script (including "title", "summary", "keyTerms", "heading", "bullets", "steps", "points", and "text" narration) MUST be written in the native script of **${targetLanguage}**.
-- If ${targetLanguage} is Hindi, write EVERYTHING in Devanagari script.
-- If ${targetLanguage} is Bengali, write EVERYTHING in Bengali script.
-- Do NOT use English letters for regional languages (e.g. no Hinglish/Romanized text unless explicitly requested).
-- Code blocks (the programming syntax) stay in English, but the comments inside the code MUST be translated to ${targetLanguage}.
+CRITICAL LANGUAGE & TRANSLATION MANDATE:
+The user selected target language: **${targetLanguage}**.
+THE ENTIRE SCRIPT (ALL TITLES, ALL HEADINGS, ALL BULLET POINTS, ALL FLOWCHART STEPS, AND ALL SPOKEN "text" NARRATIONS) MUST BE EXCLUSIVELY WRITTEN AND SPOKEN IN **${targetLanguage}**!
+DO NOT EXPLAIN IN ENGLISH! DO NOT DEFAULT TO ENGLISH NARRATION!
+- If ${targetLanguage} is Santhali (Santali): The AI teacher MUST explain everything in authentic Santhali vocabulary (using traditional greetings like "Johar!" / ᱡᱚᱦᱟᱨ!). For the spoken "text" narration, write in Santhali language using Devanagari or Ol Chiki with pronunciation (e.g. "जोहार! आज आबो पायथन प्रोग्रामिंग बोन चेदा... / Johar! Abo Python programming bon cheda..."). NEVER EXPLAIN IN ENGLISH!
+- If ${targetLanguage} is Ho: The AI teacher MUST explain everything in authentic Ho vocabulary using Devanagari script (e.g. "जोहार! तेहेन ले पायथन प्रोग्रामिंग ले दुलुड़-मेनेते सीद-आ..."). NEVER EXPLAIN IN ENGLISH!
+- If ${targetLanguage} is Mundari: The AI teacher MUST explain everything in authentic Mundari vocabulary using Devanagari script (e.g. "जोहार! तिलिंग दिंगा अबु पायथन प्रोग्रामिंग अबुंग लेलकेदा..."). NEVER EXPLAIN IN ENGLISH!
+- If ${targetLanguage} is Hindi: write EVERYTHING in Devanagari script in pure Hindi. Do NOT use English!
+- If ${targetLanguage} is Bengali: write EVERYTHING in Bengali script in pure Bengali. Do NOT use English!
+- Programming language code lines (e.g. 'x = 10', 'def loop():') remain in programming code syntax, but all explanations, comments, headings, bullet points, and narrations MUST BE IN ${targetLanguage}!
 
 OUTPUT RULES:
 1. ONLY raw JSON. No markdown, no backticks, no explanation.
@@ -335,12 +350,16 @@ GOAL: Create a BALANCED, comprehensive animated explainer video that is 4-5 minu
 - Each scene explains ONE concept clearly with enough depth that a student understands it
 - Like a perfect college lecture summary — not too brief, not too long
 
-CRITICAL TRANSLATION RULE:
-The ENTIRE script (including "title", "heading", "bullets", "steps", "points", and "text" narration) MUST be written in the native script of **${targetLanguage}**.
-- If ${targetLanguage} is Hindi, write EVERYTHING in Devanagari script.
-- If ${targetLanguage} is Bengali, write EVERYTHING in Bengali script.
-- Do NOT use English letters for regional languages (e.g. no Hinglish/Romanized text unless explicitly requested).
-- Code blocks (the programming syntax) stay in English, but the comments inside the code MUST be translated to ${targetLanguage}.
+CRITICAL LANGUAGE & TRANSLATION MANDATE:
+The user selected target language: **${targetLanguage}**.
+THE ENTIRE SCRIPT (ALL TITLES, ALL HEADINGS, ALL BULLET POINTS, ALL FLOWCHART STEPS, AND ALL SPOKEN "text" NARRATIONS) MUST BE EXCLUSIVELY WRITTEN AND SPOKEN IN **${targetLanguage}**!
+DO NOT EXPLAIN IN ENGLISH! DO NOT DEFAULT TO ENGLISH NARRATION!
+- If ${targetLanguage} is Santhali (Santali): The AI teacher MUST explain everything in authentic Santhali vocabulary (using traditional greetings like "Johar!" / ᱡᱚᱦᱟᱨ!). For the spoken "text" narration, write in Santhali language using Devanagari or Ol Chiki with pronunciation (e.g. "जोहार! आज आबो पायथन प्रोग्रामिंग बोन चेदा... / Johar! Abo Python programming bon cheda..."). NEVER EXPLAIN IN ENGLISH!
+- If ${targetLanguage} is Ho: The AI teacher MUST explain everything in authentic Ho vocabulary using Devanagari script (e.g. "जोहार! तेहेन ले पायथन प्रोग्रामिंग ले दुलुड़-मेनेते सीद-आ..."). NEVER EXPLAIN IN ENGLISH!
+- If ${targetLanguage} is Mundari: The AI teacher MUST explain everything in authentic Mundari vocabulary using Devanagari script (e.g. "जोहार! तिलिंग दिंगा अबु पायथन प्रोग्रामिंग अबुंग लेलकेदा..."). NEVER EXPLAIN IN ENGLISH!
+- If ${targetLanguage} is Hindi: write EVERYTHING in Devanagari script in pure Hindi. Do NOT use English!
+- If ${targetLanguage} is Bengali: write EVERYTHING in Bengali script in pure Bengali. Do NOT use English!
+- Programming language code lines (e.g. 'x = 10', 'def loop():') remain in programming code syntax, but all explanations, comments, headings, bullet points, and narrations MUST BE IN ${targetLanguage}!
 
 OUTPUT RULES:
 1. ONLY raw JSON. No markdown, no backticks, no explanation.
@@ -767,7 +786,7 @@ async function runPipeline(jobId, rawText, targetLanguage = 'English') {
       const audioPath = path.join(AUDIO_DIR, `${jobId}_scene_${i}.mp3`);
       tempFiles.push(audioPath);
       try {
-        const { engine } = await generateSpeech(voiceText, audioPath);
+        const { engine } = await generateSpeech(voiceText, audioPath, targetLanguage);
         const durationSec = await getAudioDuration(audioPath, voiceText);
         const subtitleWords = generateSubtitleWords(voiceText, durationSec);
         audioFiles.push({ sceneIndex: i, path: audioPath, engine, durationSec, subtitleWords });
@@ -815,11 +834,24 @@ async function runPipeline(jobId, rawText, targetLanguage = 'English') {
       const destPath = path.join(remotionPublicAudio, audioFilename);
       await fs.copyFile(af.path, destPath);
       tempFiles.push(destPath);   // clean up after render
+
+      // Check if avatar video was generated for this scene
+      const matchingAvatar = avatarResults.find(ar => ar.sceneIndex === (af.sceneIndex ?? idx));
+      let avatarRelPath = null;
+      if (matchingAvatar?.avatarPath && existsSync(matchingAvatar.avatarPath)) {
+        const avatarFilename = `${jobId}_avatar_${af.sceneIndex ?? idx}.mp4`;
+        const avatarDestPath = path.join(remotionPublicAudio, avatarFilename);
+        await fs.copyFile(matchingAvatar.avatarPath, avatarDestPath);
+        tempFiles.push(avatarDestPath);
+        avatarRelPath = `/audio/${avatarFilename}`;
+      }
+
       remotionAudioFiles.push({
-        sceneIndex:    af.sceneIndex ?? idx,
-        path:          `/audio/${audioFilename}`,  // Remotion's staticFile path (relative to public/)
-        durationSec:   af.durationSec ?? 10,
-        subtitleWords: af.subtitleWords ?? [],
+        sceneIndex:      af.sceneIndex ?? idx,
+        path:            `/audio/${audioFilename}`,  // Remotion's staticFile path (relative to public/)
+        durationSec:     af.durationSec ?? 10,
+        subtitleWords:   af.subtitleWords ?? [],
+        avatarVideoPath: avatarRelPath,
       });
     }
 
@@ -921,16 +953,43 @@ async function runPipeline(jobId, rawText, targetLanguage = 'English') {
 }
 
 // =============================================================================
-// generateAvatar -- D-ID -> SadTalker -> Remotion fallback
+// generateAvatar -- D-ID (Indian Presenter) -> HeyGen -> Replicate -> SadTalker -> Remotion fallback
 // =============================================================================
 async function generateAvatar(audioPath, outputPath) {
   if (DID_API_KEY) {
-    try { await generateWithDID(audioPath, outputPath); return { path: outputPath, engine: 'D-ID' }; }
-    catch(e) { console.warn(`   D-ID failed: ${e.message.slice(0,60)}`); }
+    try {
+      console.log('   👤  Generating Indian video avatar via D-ID...');
+      await generateWithDID(audioPath, outputPath);
+      return { path: outputPath, engine: 'D-ID (Indian Educator)' };
+    } catch(e) {
+      console.warn(`   D-ID failed: ${e.message.slice(0, 80)}`);
+    }
+  }
+  if (HEYGEN_API_KEY) {
+    try {
+      console.log('   👤  Trying HeyGen video avatar...');
+      await generateWithHeyGen(audioPath, outputPath);
+      return { path: outputPath, engine: 'HeyGen' };
+    } catch(e) {
+      console.warn(`   HeyGen failed: ${e.message.slice(0, 80)}`);
+    }
+  }
+  if (REPLICATE_API_TOKEN) {
+    try {
+      console.log('   👤  Trying Replicate talking head avatar...');
+      await generateWithReplicate(audioPath, outputPath);
+      return { path: outputPath, engine: 'Replicate (Talking Head)' };
+    } catch(e) {
+      console.warn(`   Replicate failed: ${e.message.slice(0, 80)}`);
+    }
   }
   if (HF_API_KEY) {
-    try { await generateWithSadTalker(audioPath, outputPath); return { path: outputPath, engine: 'SadTalker' }; }
-    catch(e) { console.warn(`   SadTalker failed: ${e.message.slice(0,60)}`); }
+    try {
+      await generateWithSadTalker(audioPath, outputPath);
+      return { path: outputPath, engine: 'SadTalker' };
+    } catch(e) {
+      console.warn(`   SadTalker failed: ${e.message.slice(0, 80)}`);
+    }
   }
   return { path: null, engine: 'Remotion-Avatar' };
 }
@@ -941,23 +1000,105 @@ async function generateWithDID(audioPath, outputPath) {
     method: 'POST',
     headers: { 'Authorization': `Basic ${DID_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      source_url: 'https://create-images-results.d-id.com/DefaultPresenters/Nicola_f/image.jpeg',
+      source_url: INDIAN_AVATAR_IMAGE,
       script: { type: 'audio', audio_url: `data:audio/mpeg;base64,${audioBase64}` },
       config: { stitch: true },
     }),
   });
-  if (!createRes.ok) throw new Error(`D-ID HTTP ${createRes.status}`);
+  if (!createRes.ok) {
+    const errText = await createRes.text().catch(() => '');
+    throw new Error(`D-ID HTTP ${createRes.status}: ${errText}`);
+  }
   const { id } = await createRes.json();
-  for (let i = 0; i < 24; i++) {
-    await new Promise(r => setTimeout(r, 5000));
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 4000));
     const s = await (await fetch(`https://api.d-id.com/talks/${id}`, { headers: { 'Authorization': `Basic ${DID_API_KEY}` } })).json();
     if (s.status === 'done' && s.result_url) {
-      await fs.writeFile(outputPath, Buffer.from(await (await fetch(s.result_url)).arrayBuffer()));
+      const vidRes = await fetch(s.result_url);
+      await fs.writeFile(outputPath, Buffer.from(await vidRes.arrayBuffer()));
       return;
     }
-    if (s.status === 'error') throw new Error(`D-ID: ${s.error?.description}`);
+    if (s.status === 'error') throw new Error(`D-ID: ${s.error?.description || JSON.stringify(s.error)}`);
   }
   throw new Error('D-ID timeout');
+}
+
+async function generateWithHeyGen(audioPath, outputPath) {
+  const res = await fetch('https://api.heygen.com/v2/video/generate', {
+    method: 'POST',
+    headers: {
+      'X-Api-Key': HEYGEN_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      video_inputs: [{
+        character: { type: 'avatar', avatar_id: 'default' },
+        voice: { type: 'audio', audio_url: `data:audio/mpeg;base64,${(await fs.readFile(audioPath)).toString('base64')}` }
+      }],
+      dimension: { width: 1280, height: 720 }
+    }),
+  });
+  if (!res.ok) throw new Error(`HeyGen HTTP ${res.status}`);
+  const { data } = await res.json();
+  const videoId = data?.video_id;
+  if (!videoId) throw new Error('No video_id returned by HeyGen');
+
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    const statusRes = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, {
+      headers: { 'X-Api-Key': HEYGEN_API_KEY }
+    });
+    const sData = await statusRes.json();
+    if (sData?.data?.status === 'completed' && sData.data.video_url) {
+      const vidRes = await fetch(sData.data.video_url);
+      await fs.writeFile(outputPath, Buffer.from(await vidRes.arrayBuffer()));
+      return;
+    }
+    if (sData?.data?.status === 'failed') throw new Error(`HeyGen error: ${sData.data.error}`);
+  }
+  throw new Error('HeyGen timeout');
+}
+
+async function generateWithReplicate(audioPath, outputPath) {
+  const audioBase64 = (await fs.readFile(audioPath)).toString('base64');
+  const audioDataUri = `data:audio/mpeg;base64,${audioBase64}`;
+
+  const startRes = await fetch('https://api.replicate.com/v1/predictions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${REPLICATE_API_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      version: 'a519cc0cf43a85234d17a73123fa33a857e384501a81452296d36e8f44ff53e7',
+      input: {
+        source_image: INDIAN_AVATAR_IMAGE,
+        driven_audio: audioDataUri,
+        still: true,
+      },
+    }),
+  });
+  if (!startRes.ok) throw new Error(`Replicate HTTP ${startRes.status}`);
+  let pred = await startRes.json();
+  const getUrl = pred.urls?.get;
+  if (!getUrl) throw new Error('No polling URL from Replicate');
+
+  for (let i = 0; i < 25; i++) {
+    await new Promise(r => setTimeout(r, 4000));
+    const pollRes = await fetch(getUrl, {
+      headers: { 'Authorization': `Bearer ${REPLICATE_API_TOKEN}` },
+    });
+    pred = await pollRes.json();
+    if (pred.status === 'succeeded' && pred.output) {
+      const vidRes = await fetch(pred.output);
+      await fs.writeFile(outputPath, Buffer.from(await vidRes.arrayBuffer()));
+      return;
+    }
+    if (pred.status === 'failed' || pred.status === 'canceled') {
+      throw new Error(`Replicate ${pred.status}: ${pred.error || 'Failed'}`);
+    }
+  }
+  throw new Error('Replicate timeout');
 }
 
 async function generateWithSadTalker(audioPath, outputPath) {
@@ -1007,6 +1148,299 @@ app.get('/jobs', async (_req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   return res.json({ success: true, count: data.length, jobs: data });
 });
+
+// =============================================================================
+// STUDY TOOLS — Flashcards & Worksheets AI Engine (Appended from Proxy)
+// =============================================================================
+function getStudyToolLanguageGuidance(language = 'English') {
+  const lang = (language || 'English').trim();
+  if (/santhali|santali/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ / संथाली):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Santhali.
+- Use Santhali in Ol Chiki script (ᱥᱟᱱᱛᱟᱲᱤ) or Devanagari transliteration (संथाली).
+- DO NOT default to English or Hindi! Every single card front, card back, and worksheet question must be in Santhali.
+- Include the traditional Santhali greeting: "Johar!" (ᱡᱚᱦᱟᱨ / जोहार).
+- Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
+  }
+  if (/^ho$/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — HO (हो / ᱦᱳ):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Ho language (using Devanagari script or Varang Kshiti).
+- DO NOT write explanations in English. Every single card front, card back, and worksheet question must be in pure Ho.
+- Include the traditional Ho greeting: "Johar!" (जोहार).
+- Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
+  }
+  if (/mundari/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — MUNDARI (मुंडारी / ᱢᱩᱱᱰᱟᱨᱤ):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Mundari language (using Devanagari script or Mundari Bani).
+- DO NOT write explanations in English. Every single card front, card back, and worksheet question must be in pure Mundari.
+- Include the traditional Mundari greeting: "Johar!" (जोहार).
+- Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
+  }
+  if (/hinglish/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE DIRECTIVE — HINGLISH:
+- Write ALL questions, explanations, and instructions in natural conversational Hinglish (Hindi written using Latin Roman script, e.g., "Yeh concept samjho...").`;
+  }
+  if (/hindi/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE DIRECTIVE — HINDI (हिंदी):
+- Write ALL questions, options, answers, and instructions in pure Hindi using Devanagari script.`;
+  }
+  return `
+CRITICAL LANGUAGE DIRECTIVE:
+- Write ALL content strictly in ${lang}. Use the authentic script of ${lang}.`;
+}
+
+function buildFlashcardPrompt(rawText, language = 'English') {
+  const langGuidance = getStudyToolLanguageGuidance(language);
+  return `You are an expert educator. From the provided study material, create a comprehensive set of FLASHCARDS.
+
+TARGET LANGUAGE: ${language}
+${langGuidance}
+
+Generate 15-25 flashcards covering ALL important concepts, terms, definitions, and key facts.
+
+Output ONLY valid JSON in this exact structure:
+{
+  "title": "Topic name (in ${language})",
+  "language": "${language}",
+  "total": 15,
+  "cards": [
+    {
+      "id": 1,
+      "front": "Question or term in ${language} (concise, clear)",
+      "back": "Answer or definition in ${language} (detailed, informative, 2-4 sentences)",
+      "category": "Definition | Concept | Formula | Example | Comparison",
+      "difficulty": "Easy | Medium | Hard"
+    }
+  ]
+}
+
+RULES:
+1. Front = clear question or term to recall in ${language}.
+2. Back = complete, informative answer in ${language} (not just 1 word).
+3. Cover every major concept from the input.
+4. Mix different difficulty levels.
+5. Categories help students identify what type of knowledge is being tested.
+6. The entire card content must be in ${language}.
+
+INPUT TEXT:
+"""${rawText.slice(0, 15000)}"""
+
+JSON ONLY:`;
+}
+
+function buildWorksheetPrompt(rawText, language = 'English') {
+  const langGuidance = getStudyToolLanguageGuidance(language);
+  return `You are an expert educator. From the provided study material, create a comprehensive WORKSHEET for students.
+
+TARGET LANGUAGE: ${language}
+${langGuidance}
+
+Output ONLY valid JSON:
+{
+  "title": "Worksheet title (in ${language})",
+  "subject": "Subject/topic name (in ${language})",
+  "language": "${language}",
+  "instructions": "General instructions for the student (in ${language})",
+  "sections": [
+    {
+      "type": "mcq",
+      "title": "Section A: Multiple Choice Questions (in ${language})",
+      "questions": [
+        {
+          "id": 1,
+          "question": "Question text in ${language}",
+          "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+          "answer": "A"
+        }
+      ]
+    },
+    {
+      "type": "fill_blank",
+      "title": "Section B: Fill in the Blanks (in ${language})",
+      "questions": [
+        { "id": 1, "question": "Question with blank in ${language}", "answer": "correct word in ${language}" }
+      ]
+    },
+    {
+      "type": "short_answer",
+      "title": "Section C: Short Answer Questions (in ${language})",
+      "questions": [
+        { "id": 1, "question": "Explain in 2-3 lines in ${language}...", "answer": "Model answer in ${language}..." }
+      ]
+    },
+    {
+      "type": "true_false",
+      "title": "Section D: True or False (in ${language})",
+      "questions": [
+        { "id": 1, "question": "Statement here in ${language}.", "answer": "True" }
+      ]
+    },
+    {
+      "type": "long_answer",
+      "title": "Section E: Long Answer Questions (in ${language})",
+      "questions": [
+        { "id": 1, "question": "Describe in detail in ${language}...", "answer": "Detailed model answer in ${language}..." }
+      ]
+    }
+  ]
+}
+
+RULES:
+1. MCQ section: Minimum 8-10 questions.
+2. Fill in the blank: Minimum 6-8 questions.
+3. Short answer: Minimum 5 questions.
+4. True/False: Minimum 6-8 questions.
+5. Long answer: Minimum 2-3 questions.
+6. Questions must cover ALL major topics from the input.
+7. Include model answers for everything.
+8. Every question, option, and answer MUST BE STRICTLY in ${language}.
+
+INPUT TEXT:
+"""${rawText.slice(0, 15000)}"""
+
+JSON ONLY:`;
+}
+
+// Flashcards from raw text
+app.post('/flashcards', async (req, res) => {
+  const { raw_text, language = 'English' } = req.body;
+  if (!raw_text?.trim() || raw_text.trim().length < 20)
+    return res.status(400).json({ error: 'raw_text must be at least 20 characters.' });
+  try {
+    const prompt = buildFlashcardPrompt(raw_text.trim(), language);
+    const rawOut = await callRawAIRotation(prompt);
+    const flashcards = extractJson(rawOut);
+    const id = uuidv4();
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'flashcard', title: flashcards.title, language, data: flashcards, created_at: new Date().toISOString() }); } catch(_) {}
+    return res.json({ success: true, id, flashcards });
+  } catch(e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Flashcards from file upload
+app.post('/flashcards-from-file', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  const language = req.body.language || 'English';
+  try {
+    const rawText = await extractText(req.file.path, req.file.mimetype, req.file.originalname);
+    await fs.unlink(req.file.path).catch(() => {});
+    if (rawText.trim().length < 20) return res.status(422).json({ error: 'Text too short.' });
+    const prompt = buildFlashcardPrompt(rawText, language);
+    const rawOut = await callRawAIRotation(prompt);
+    const flashcards = extractJson(rawOut);
+    const id = uuidv4();
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'flashcard', title: flashcards.title, language, data: flashcards, created_at: new Date().toISOString() }); } catch(_) {}
+    return res.json({ success: true, id, flashcards });
+  } catch(e) {
+    await fs.unlink(req.file?.path).catch(() => {});
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Worksheets from raw text
+app.post('/worksheet', async (req, res) => {
+  const { raw_text, language = 'English' } = req.body;
+  if (!raw_text?.trim() || raw_text.trim().length < 20)
+    return res.status(400).json({ error: 'raw_text must be at least 20 characters.' });
+  try {
+    const prompt = buildWorksheetPrompt(raw_text.trim(), language);
+    const rawOut = await callRawAIRotation(prompt);
+    const worksheet = extractJson(rawOut);
+    const id = uuidv4();
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'worksheet', title: worksheet.title, language, data: worksheet, created_at: new Date().toISOString() }); } catch(_) {}
+    return res.json({ success: true, id, worksheet });
+  } catch(e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Worksheets from file upload
+app.post('/worksheet-from-file', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  const language = req.body.language || 'English';
+  try {
+    const rawText = await extractText(req.file.path, req.file.mimetype, req.file.originalname);
+    await fs.unlink(req.file.path).catch(() => {});
+    if (rawText.trim().length < 20) return res.status(422).json({ error: 'Text too short.' });
+    const prompt = buildWorksheetPrompt(rawText, language);
+    const rawOut = await callRawAIRotation(prompt);
+    const worksheet = extractJson(rawOut);
+    const id = uuidv4();
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'worksheet', title: worksheet.title, language, data: worksheet, created_at: new Date().toISOString() }); } catch(_) {}
+    return res.json({ success: true, id, worksheet });
+  } catch(e) {
+    await fs.unlink(req.file?.path).catch(() => {});
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Proxy route aliases for backwards compatibility
+app.get('/proxy/health', (req, res) => res.json({ status: 'ok', service: 'CodeSeekho Unified Pipeline', port: PORT }));
+app.get('/proxy/jobs', async (req, res) => {
+  const { data, error } = await supabase.from(SUPABASE_TABLE).select('job_id,title,language,scene_count,video_url,created_at,status').order('created_at', { ascending: false }).limit(50);
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ success: true, count: data.length, jobs: data });
+});
+app.get('/proxy/jobs/:id', async (req, res) => {
+  const { data, error } = await supabase.from(SUPABASE_TABLE).select('*').eq('job_id', req.params.id).single();
+  if (error || !data) return res.status(404).json({ error: 'Not found' });
+  return res.json({ success: true, job: data });
+});
+app.get('/proxy/credits', (_req, res) => res.redirect('/credits'));
+
+// =============================================================================
+// TRANSLATION ENDPOINT — Regional & Indigenous Languages (Santhali, Ho, Mundari, etc.)
+// =============================================================================
+app.post(['/translate', '/proxy/translate'], async (req, res) => {
+  const { text, targetLanguage = 'Hindi', studentName } = req.body;
+  if (!text || typeof text !== 'string') {
+    return res.status(400).json({ success: false, error: 'Text is required' });
+  }
+
+  try {
+    let scriptInstructions = '';
+    const langLower = targetLanguage.toLowerCase();
+    if (langLower.includes('santhali') || langLower.includes('santali')) {
+      scriptInstructions = 'Translate into authentic Santhali (Santali) using Ol Chiki script (ᱚᱞ ᱪᱤᱠᱤ) or Devanagari script with cultural greetings ("Johar!"). Provide both Ol Chiki and Devanagari/pronunciation if beneficial.';
+    } else if (langLower.includes('ho')) {
+      scriptInstructions = 'Translate into authentic Ho language using Devanagari script (or Warang Chiti / Latin transliteration) with cultural greetings ("Johar!").';
+    } else if (langLower.includes('mundari')) {
+      scriptInstructions = 'Translate into authentic Mundari language using Devanagari script with cultural greetings ("Johar!").';
+    } else {
+      scriptInstructions = `Translate into authentic ${targetLanguage} in its native script.`;
+    }
+
+    const prompt = `You are an expert indigenous and regional language translator for Indian students on CodeSeekho.
+Translate the following educational text into ${targetLanguage}.
+${scriptInstructions}
+Keep code blocks in English syntax, but translate comments and explanations.
+Return ONLY the translated text without extra conversational fillers or markdown wrapping.
+
+INPUT:
+${text.trim()}`;
+
+    const translatedText = await callRawAIRotation(prompt);
+    return res.json({
+      success: true,
+      translatedText: translatedText.trim(),
+      targetLanguage,
+      studentName: studentName || 'Student'
+    });
+  } catch (err) {
+    console.error('[Translate API] Error:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Translation failed: ' + err.message
+    });
+  }
+});
+
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, _req, res, _next) => res.status(500).json({ error: err.message }));

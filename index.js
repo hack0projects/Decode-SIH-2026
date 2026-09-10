@@ -120,7 +120,17 @@ app.post('/translate', async (req, res) => {
   const { text, targetLanguage, studentName } = req.body;
 
   try {
-    const translatePrompt = `Translate the following text into ${targetLanguage}. Only return the translated text, nothing else:\n\n${text}`;
+    let langNote = '';
+    const langLower = (targetLanguage || '').toLowerCase();
+    if (langLower.includes('santhali') || langLower.includes('santali')) {
+      langNote = ' Use authentic Santhali (Santali) with Ol Chiki script (ᱚᱞ ᱪᱤᱠᱤ) or Devanagari script, incorporating traditional greeting "Johar!".';
+    } else if (langLower.includes('ho')) {
+      langNote = ' Use authentic Ho language with Devanagari script, incorporating traditional greeting "Johar!".';
+    } else if (langLower.includes('mundari')) {
+      langNote = ' Use authentic Mundari language with Devanagari script, incorporating traditional greeting "Johar!".';
+    }
+
+    const translatePrompt = `Translate the following educational text into ${targetLanguage}.${langNote} Only return the translated text, nothing else:\n\n${text}`;
 
     const groqResponse = await axios.post(
       process.env.TRANSLATE_API_URL,

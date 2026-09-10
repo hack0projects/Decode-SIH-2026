@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#07071a;color:#fff;min-height:100vh;}
-header{display:flex;align-items:center;justify-content:space-between;padding:16px 36px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(124,58,237,.3);position:sticky;top:0;z-index:100;}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;background:rgba(7,7,26,0.96);backdrop-filter:blur(16px);border-bottom:1px solid rgba(124,58,237,.35);position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
 .logo{display:flex;align-items:center;gap:12px;}
 .logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
 .logo h1{font-size:20px;font-weight:700;background:linear-gradient(90deg,#a78bfa,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
@@ -64,9 +64,9 @@ textarea::placeholder{color:#4b5563;}
 .step.wait .step-badge{background:rgba(255,255,255,.05);color:#4b5563;}
 .lang-row{display:flex;align-items:center;gap:12px;margin:14px 0 10px;padding:12px 16px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:12px;}
 .lang-label{font-size:13px;color:#a78bfa;font-weight:600;white-space:nowrap;}
-.lang-select{flex:1;background:#1e1b4b;color:#e2e8f0;border:1px solid rgba(124,58,237,.4);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;outline:none;}
+.lang-select{flex:1;background:#1e1b4b;color:#e2e8f0;border:1px solid rgba(124,58,237,.4);border-radius:8px;padding:9px 14px;font-size:13.5px;cursor:pointer;outline:none;font-family:'Segoe UI','Noto Sans Ol Chiki',Arial,sans-serif;}
 .lang-select:focus{border-color:#7c3aed;box-shadow:0 0 0 2px rgba(124,58,237,.2);}
-.lang-select option{background:#1e1b4b;color:#e2e8f0;}
+.lang-select option{background:#1e1b4b;color:#e2e8f0;padding:6px;}
 .pb-wrap{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;}
 .pb{height:100%;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:99px;width:0%;transition:width .5s;}
 .prog-label{text-align:center;margin-top:10px;color:#6b7280;font-size:13px;}
@@ -98,8 +98,8 @@ textarea::placeholder{color:#4b5563;}
 .no-jobs{text-align:center;color:#4b5563;padding:36px;}
 .refresh-btn{display:block;width:fit-content;margin:0 auto 16px;padding:8px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:8px;cursor:pointer;font-size:13px;}
 /* action row */
-.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
-.btn-outline{background:transparent;border:2px solid #7c3aed;color:#a78bfa;font-size:14px;font-weight:600;padding:13px;border-radius:12px;cursor:pointer;transition:.2s;}
+.action-row{display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:10px;margin-top:12px;}
+.btn-outline{background:transparent;border:2px solid #7c3aed;color:#a78bfa;font-size:13.5px;font-weight:600;padding:12px;border-radius:12px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
 .btn-outline:hover{background:rgba(124,58,237,.15);}
 .btn-outline:disabled{opacity:.4;cursor:not-allowed;}
 /* summary modal */
@@ -120,15 +120,57 @@ textarea::placeholder{color:#4b5563;}
 .sum-footer{display:flex;gap:10px;margin-top:18px;}
 .sum-btn-video{flex:1;padding:13px;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
 .sum-btn-copy{padding:13px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:10px;font-size:13px;cursor:pointer;}
+
+/* Study Modal (Flashcards & Worksheets) */
+.study-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:1100;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.study-modal-overlay.show{display:flex;}
+.study-modal{background:#0d1117;border:1px solid rgba(124,58,237,.4);border-radius:18px;width:100%;max-width:850px;max-height:90vh;overflow-y:auto;padding:28px;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,.7);}
+.study-modal h2{color:#a78bfa;font-size:22px;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.study-modal .study-meta{font-size:13px;color:#9ca3af;margin-bottom:18px;}
+.study-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#cbd5e1;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;}
+.study-close:hover{background:rgba(255,255,255,.16);}
+
+/* Flashcard single flip viewer */
+.fc-flip-wrap{perspective:1000px;margin:20px 0;cursor:pointer;}
+.fc-card{min-height:220px;border-radius:16px;background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(30,27,75,.7));border:1px solid rgba(124,58,237,.35);padding:24px;display:flex;flex-direction:column;justify-content:space-between;transition:transform 0.4s;transform-style:preserve-3d;position:relative;}
+.fc-card.flipped{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(6,78,59,.6));border-color:rgba(16,185,129,.4);}
+.fc-badge{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#c4b5fd;background:rgba(124,58,237,.25);padding:3px 10px;border-radius:20px;display:inline-block;width:fit-content;}
+.fc-content{font-size:18px;font-weight:600;color:#f8fafc;margin:20px 0;line-height:1.6;}
+.fc-footer{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#94a3b8;}
+.fc-controls{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+.fc-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#e2e8f0;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;}
+.fc-btn:hover{background:rgba(124,58,237,.25);border-color:#7c3aed;}
+.fc-grid-view{display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:12px;margin-top:20px;max-height:260px;overflow-y:auto;padding-right:6px;}
+.fc-grid-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;cursor:pointer;transition:.2s;}
+.fc-grid-item:hover{border-color:#7c3aed;}
+
+/* Worksheet styles */
+.ws-sec{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px;margin-bottom:16px;}
+.ws-sec-title{font-size:15px;font-weight:700;color:#60a5fa;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.ws-q-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.ws-q-item:last-child{border-bottom:none;}
+.ws-q-txt{font-size:14px;color:#f1f5f9;font-weight:600;margin-bottom:6px;}
+.ws-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.ws-opt{background:rgba(255,255,255,.04);border-radius:6px;padding:6px 10px;font-size:13px;color:#cbd5e1;}
+.ws-ans{display:none;margin-top:6px;padding:8px 12px;background:rgba(16,185,129,.1);border-left:3px solid #10b981;border-radius:4px;color:#34d399;font-size:13px;font-weight:600;}
+.ws-ans.show{display:block;}
+.ws-ans-toggle{background:none;border:none;color:#818cf8;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;margin-top:4px;}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">
-    <div class="logo-icon">🤖</div>
-    <div><h1>CodeSeekho V3</h1><p>AI Avatar Video Generator</p></div>
+<div class="logo">
+  <div class="logo-icon">🧑‍💻</div>
+  <div>
+    <h1>CodeSeekho AI</h1>
+    <p>Educational Video &amp; Study Suite</p>
   </div>
-  <div class="v2-badge">🎭 Avatar Mode</div>
+</div>
+<nav style="display:flex; gap:10px; align-items:center;">
+  <a href="/" style="padding:6px 14px; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; box-shadow:0 2px 10px rgba(124,58,237,0.3);">🎬 Video Engine</a>
+  <a href="/study-tools" style="padding:6px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(124,58,237,0.4); color:#c4b5fd; border-radius:10px; text-decoration:none; font-size:13px; font-weight:600; transition:0.2s;">📚 Study Tools (Flashcards &amp; Worksheets)</a>
+</nav>
+<span class="v2-badge">V3 UNIFIED</span>
 </header>
 <main>
   <h2>AI Avatar Explains Your Content</h2>
@@ -191,6 +233,9 @@ textarea::placeholder{color:#4b5563;}
         <option value="English" selected>🇺🇸 English</option>
         <option value="Hindi">🇮🇳 Hindi (हिंदी)</option>
         <option value="Hinglish">🇮🇳 Hinglish (Mix)</option>
+        <option value="Santhali">🇮🇳 Santhali (संथाली / ᱥᱟᱱᱛᱟᱲᱤ)</option>
+        <option value="Ho">🇮🇳 Ho (हो / ᱦᱳ)</option>
+        <option value="Mundari">🇮🇳 Mundari (मुंडारी / ᱢᱩᱱᱰᱟᱨᱤ)</option>
         <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
         <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
         <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
@@ -204,6 +249,8 @@ textarea::placeholder{color:#4b5563;}
     </div>
     <div class="action-row">
       <button class="btn btn-outline" id="summaryBtnFile" onclick="getSummaryFromFile()" disabled>📋 Script Summary</button>
+      <button class="btn btn-outline" id="fcBtnFile" onclick="genFlashcardsFromFile()" disabled style="border-color:rgba(167,139,250,0.5);color:#c4b5fd;">🃏 Make Flashcards</button>
+      <button class="btn btn-outline" id="wsBtnFile" onclick="genWorksheetFromFile()" disabled style="border-color:rgba(96,165,250,0.5);color:#93c5fd;">📝 Make Worksheet</button>
       <button class="btn" id="uploadBtn" onclick="genFromFile()" disabled>🎬 Generate Video</button>
     </div>
   </div>
@@ -216,6 +263,9 @@ textarea::placeholder{color:#4b5563;}
         <option value="English" selected>🇺🇸 English</option>
         <option value="Hindi">🇮🇳 Hindi (हिंदी)</option>
         <option value="Hinglish">🇮🇳 Hinglish (Mix)</option>
+        <option value="Santhali">🇮🇳 Santhali (संथाली / ᱥᱟᱱᱛᱟᱲᱤ)</option>
+        <option value="Ho">🇮🇳 Ho (हो / ᱦᱳ)</option>
+        <option value="Mundari">🇮🇳 Mundari (मुंडारी / ᱢᱩᱱᱰᱟᱨᱤ)</option>
         <option value="Bengali">🇮🇳 Bengali (বাংলা)</option>
         <option value="Marathi">🇮🇳 Marathi (मराठी)</option>
         <option value="Telugu">🇮🇳 Telugu (తెలుగు)</option>
@@ -228,8 +278,10 @@ textarea::placeholder{color:#4b5563;}
       </select>
     </div>
     <div class="action-row">
-      <button class="btn btn-outline" onclick="getSummaryFromText()">📋 Script Summary</button>
-      <button class="btn" onclick="genFromText()">🎬 Generate Video</button>
+      <button class="btn btn-outline" id="summaryBtnText" onclick="getSummaryFromText()">📋 Script Summary</button>
+      <button class="btn btn-outline" id="fcBtnText" onclick="genFlashcardsFromText()" style="border-color:rgba(167,139,250,0.5);color:#c4b5fd;">🃏 Make Flashcards</button>
+      <button class="btn btn-outline" id="wsBtnText" onclick="genWorksheetFromText()" style="border-color:rgba(96,165,250,0.5);color:#93c5fd;">📝 Make Worksheet</button>
+      <button class="btn" id="textBtn" onclick="genFromText()">🎬 Generate Video</button>
     </div>
   </div>
 
@@ -283,7 +335,11 @@ textarea::placeholder{color:#4b5563;}
     </div>
     <a href="#" target="_blank" class="watch-btn" id="watchBtn">▶️ Watch Avatar Video</a>
     <a href="#" target="_blank" class="watch-btn" id="mdBtn" style="background:linear-gradient(135deg,#0369a1,#0284c7);margin-top:8px;">📄 Download Script as Markdown</a>
-    <button class="copy-btn" onclick="copyUrl()">📋 Copy Video URL</button>
+    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+      <button class="watch-btn" id="resFcBtn" style="background:linear-gradient(135deg,#7c3aed,#9333ea);flex:1;min-width:160px;margin-bottom:0;" onclick="genFlashcardsFromResult()">🃏 Make Flashcards in <span id="rLangFc">this language</span></button>
+      <button class="watch-btn" id="resWsBtn" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);flex:1;min-width:160px;margin-bottom:0;" onclick="genWorksheetFromResult()">📝 Make Worksheet in <span id="rLangWs">this language</span></button>
+    </div>
+    <button class="copy-btn" onclick="copyUrl()" style="margin-top:10px;">📋 Copy Video URL</button>
   </div>
 
   <div class="err" id="err">
@@ -319,29 +375,49 @@ function onFile(inp){
   document.getElementById('fsel').classList.add('show');
   document.getElementById('uploadBtn').disabled=false;
   document.getElementById('summaryBtnFile').disabled=false;
+  if(document.getElementById('fcBtnFile')) document.getElementById('fcBtnFile').disabled=false;
+  if(document.getElementById('wsBtnFile')) document.getElementById('wsBtnFile').disabled=false;
 }
 function clearFile(){
   document.getElementById('fi').value='';
   document.getElementById('fsel').classList.remove('show');
   document.getElementById('uploadBtn').disabled=true;
   document.getElementById('summaryBtnFile').disabled=true;
+  if(document.getElementById('fcBtnFile')) document.getElementById('fcBtnFile').disabled=true;
+  if(document.getElementById('wsBtnFile')) document.getElementById('wsBtnFile').disabled=true;
 }
 const dz=document.getElementById('dz');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='#7c3aed';});
 dz.addEventListener('dragleave',()=>dz.style.borderColor='');
 dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';const f=e.dataTransfer.files[0];if(f){const inp=document.getElementById('fi');inp.files=e.dataTransfer.files;onFile(inp);}});
 
+let isGenerating = false;
+
 async function genFromFile(){
+  if (isGenerating) return;
   const f=document.getElementById('fi').files[0]; if(!f) return;
   const lang = document.getElementById('langSelect').value;
+  isGenerating = true;
+  document.getElementById('uploadBtn').disabled = true;
+  document.getElementById('summaryBtnFile').disabled = true;
   const form=new FormData(); form.append('file',f); form.append('script_language', lang);
-  await run(()=>fetch('/generate-from-file',{method:'POST',body:form}));
+  try {
+    await run(()=>fetch('/generate-from-file',{method:'POST',body:form}));
+  } finally {
+    isGenerating = false;
+  }
 }
 async function genFromText(){
+  if (isGenerating) return;
   const t=document.getElementById('rawText').value.trim();
   const lang = document.getElementById('langSelect2').value;
   if(t.length<10){alert('At least 10 characters needed.');return;}
-  await run(()=>fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({raw_text:t, script_language: lang})}));
+  isGenerating = true;
+  try {
+    await run(()=>fetch('/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({raw_text:t, script_language: lang})}));
+  } finally {
+    isGenerating = false;
+  }
 }
 
 async function run(fetchFn){
@@ -401,9 +477,12 @@ async function run(fetchFn){
           const jData = await jRes.json();
           if (jData.success) {
             const job = jData.job;
+            _currentJob = job;
             vidUrl = job.video_url;
             document.getElementById('rTitle').textContent = job.title;
             document.getElementById('rLang').textContent = job.language;
+            if (document.getElementById('rLangFc')) document.getElementById('rLangFc').textContent = job.language;
+            if (document.getElementById('rLangWs')) document.getElementById('rLangWs').textContent = job.language;
             document.getElementById('rScenes').textContent = job.scene_count + ' scenes';
             document.getElementById('rEngine').textContent = 'Remotion-Avatar';
             document.getElementById('watchBtn').href = job.video_url;
@@ -523,6 +602,27 @@ async function loadCredits() {
   </div>
 </div>
 
+<!-- Study Tools Modal (Flashcards & Worksheets) -->
+<div class="study-modal-overlay" id="studyModalOverlay" onclick="if(event.target===this) closeStudyModal()">
+  <div class="study-modal">
+    <button class="study-close" onclick="closeStudyModal()">✕ Close</button>
+    <h2 id="studyModalTitle">🃏 Interactive Flashcards</h2>
+    <div class="study-meta" id="studyModalMeta">Language: English · CodeSeekho AI Study Engine</div>
+    <div id="studyModalBody">
+      <!-- Dynamic Content rendered by renderStudyModalFlashcards or renderStudyModalWorksheet -->
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); flex-wrap:wrap; gap:10px;">
+      <a href="/study-tools" target="_blank" style="color:#a78bfa; font-size:13px; text-decoration:none; font-weight:600; display:flex; align-items:center; gap:4px;">
+        📚 Open Full Study Tools Suite ↗
+      </a>
+      <div style="display:flex; gap:10px;">
+        <button class="fc-btn" id="studyPrintBtn" style="display:none;" onclick="window.print()">🖨️ Print / Save PDF</button>
+        <button class="fc-btn" onclick="closeStudyModal()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Summary helpers ────────────────────────────────────────────────────────────
 let _lastSummaryRawText   = '';
@@ -618,6 +718,280 @@ async function getSummaryFromText() {
     alert('❌ Summary failed: ' + e.message);
   } finally {
     btns.forEach(b => { b.textContent = '📋 Script Summary'; b.disabled = false; });
+  }
+}
+
+// ── Study Tools (Flashcards & Worksheets) Modal Handlers ───────────────────────
+let _fcCards = [];
+let _fcIdx = 0;
+let _fcFlipped = false;
+
+function closeStudyModal() {
+  document.getElementById('studyModalOverlay').classList.remove('show');
+}
+
+function showStudyModalLoading(title, language) {
+  document.getElementById('studyModalTitle').innerHTML = title;
+  document.getElementById('studyModalMeta').textContent = `Target Language: ${language} · AI Model generating authentic study materials...`;
+  document.getElementById('studyModalBody').innerHTML = `
+    <div style="text-align:center; padding:50px 20px; color:#cbd5e1;">
+      <div style="display:inline-block; width:40px; height:40px; border:3px solid rgba(167,139,250,0.3); border-top-color:#a78bfa; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px;"></div>
+      <div style="font-size:16px; font-weight:600; color:#c4b5fd;">Generating comprehensive content in ${language}...</div>
+      <div style="font-size:13px; color:#94a3b8; margin-top:8px;">Adapting terminology, cultural context, and native script without English fallback</div>
+    </div>
+  `;
+  document.getElementById('studyPrintBtn').style.display = 'none';
+  document.getElementById('studyModalOverlay').classList.add('show');
+}
+
+function renderStudyModalFlashcards(fcData, language) {
+  _fcCards = fcData.cards || [];
+  _fcIdx = 0;
+  _fcFlipped = false;
+  document.getElementById('studyModalTitle').innerHTML = `🃏 ${fcData.title || 'Flashcards'} <span style="font-size:13px; color:#a78bfa; font-weight:400;">(${fcData.total || _fcCards.length} cards)</span>`;
+  document.getElementById('studyModalMeta').textContent = `Language: ${language} · 100% Native Script · Click card to flip`;
+  document.getElementById('studyPrintBtn').style.display = 'none';
+
+  const body = document.getElementById('studyModalBody');
+  body.innerHTML = `
+    <div class="fc-flip-wrap" onclick="flipStudyCard()">
+      <div class="fc-card" id="mainFcCard">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="fc-badge" id="fcBadgeSide">QUESTION</span>
+            <span style="font-size:12px; color:#94a3b8;" id="fcCategoryBadge">Definition</span>
+          </div>
+          <div class="fc-content" id="fcContentText"></div>
+        </div>
+        <div class="fc-footer">
+          <span id="fcCardCount">Card 1 of ${_fcCards.length}</span>
+          <span id="fcDifficultyBadge" style="padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; background:rgba(59,130,246,.2); color:#60a5fa;">Easy</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:12px; color:#94a3b8; margin-top:-8px;">👆 Tap anywhere on the card to flip between Question &amp; Answer</div>
+    <div class="fc-controls">
+      <button class="fc-btn" onclick="navStudyCard(-1)">← Previous</button>
+      <button class="fc-btn" onclick="shuffleStudyCards()">🔀 Shuffle</button>
+      <button class="fc-btn" onclick="navStudyCard(1)">Next →</button>
+    </div>
+    <div style="margin-top:24px;">
+      <div style="font-size:13px; font-weight:700; color:#cbd5e1; margin-bottom:10px;">📋 All Cards Overview:</div>
+      <div class="fc-grid-view">
+        ${_fcCards.map((c, i) => `
+          <div class="fc-grid-item" onclick="jumpStudyCard(${i})">
+            <div style="font-size:11px; color:#a78bfa; font-weight:700; margin-bottom:4px;">#${i + 1} · ${c.category || 'Concept'}</div>
+            <div style="font-size:12px; color:#f1f5f9; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.front}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  updateStudyCardUI();
+}
+
+function updateStudyCardUI() {
+  if (!_fcCards.length) return;
+  const c = _fcCards[_fcIdx];
+  const card = document.getElementById('mainFcCard');
+  const badgeSide = document.getElementById('fcBadgeSide');
+  const content = document.getElementById('fcContentText');
+  const cat = document.getElementById('fcCategoryBadge');
+  const count = document.getElementById('fcCardCount');
+  const diff = document.getElementById('fcDifficultyBadge');
+
+  if (!card) return;
+  card.classList.toggle('flipped', _fcFlipped);
+  badgeSide.textContent = _fcFlipped ? 'ANSWER ✅' : 'QUESTION ❓';
+  badgeSide.style.color = _fcFlipped ? '#34d399' : '#c4b5fd';
+  badgeSide.style.background = _fcFlipped ? 'rgba(16,185,129,.2)' : 'rgba(124,58,237,.25)';
+  content.textContent = _fcFlipped ? c.back : c.front;
+  cat.textContent = c.category || 'Topic';
+  count.textContent = `Card ${_fcIdx + 1} of ${_fcCards.length}`;
+  diff.textContent = c.difficulty || 'Medium';
+}
+
+function flipStudyCard() {
+  _fcFlipped = !_fcFlipped;
+  updateStudyCardUI();
+}
+
+function navStudyCard(dir) {
+  _fcIdx = (_fcIdx + dir + _fcCards.length) % _fcCards.length;
+  _fcFlipped = false;
+  updateStudyCardUI();
+}
+
+function jumpStudyCard(i) {
+  _fcIdx = i;
+  _fcFlipped = false;
+  updateStudyCardUI();
+}
+
+function shuffleStudyCards() {
+  _fcCards = _fcCards.sort(() => Math.random() - 0.5);
+  _fcIdx = 0;
+  _fcFlipped = false;
+  updateStudyCardUI();
+}
+
+function renderStudyModalWorksheet(ws, language) {
+  document.getElementById('studyModalTitle').innerHTML = `📝 ${ws.title || 'Worksheet'} <span style="font-size:13px; color:#60a5fa; font-weight:400;">(${ws.subject || 'Subject'})</span>`;
+  document.getElementById('studyModalMeta').textContent = `Language: ${language} · ${ws.instructions || 'Answer all questions'}`;
+  document.getElementById('studyPrintBtn').style.display = 'inline-block';
+
+  const icons = { mcq: '🔘', fill_blank: '✏️', short_answer: '📝', true_false: '✅', long_answer: '📖' };
+  const sectionsHTML = (ws.sections || []).map(sec => {
+    const qHTML = (sec.questions || []).map(q => {
+      let opts = '';
+      if (sec.type === 'mcq' && q.options) {
+        opts = `<div class="ws-opts">${q.options.map(o => `<div class="ws-opt">${o}</div>`).join('')}</div>`;
+      }
+      return `
+        <div class="ws-q-item">
+          <div class="ws-q-txt"><span style="color:#a78bfa;">Q${q.id || ''}.</span> ${q.question}</div>
+          ${opts}
+          <button class="ws-ans-toggle" onclick="this.nextElementSibling.classList.toggle('show')">Show Answer 👁️</button>
+          <div class="ws-ans">✅ ${q.answer}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="ws-sec">
+        <div class="ws-sec-title">${icons[sec.type] || '📌'} ${sec.title}</div>
+        ${qHTML}
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('studyModalBody').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div style="font-size:13px; color:#94a3b8;">${(ws.sections || []).reduce((a, s) => a + (s.questions?.length || 0), 0)} Total Questions</div>
+      <button class="fc-btn" onclick="document.querySelectorAll('.ws-ans').forEach(el => el.classList.toggle('show'))">👁️ Toggle All Answers</button>
+    </div>
+    ${sectionsHTML}
+  `;
+}
+
+// Action button handlers
+async function genFlashcardsFromFile() {
+  const f = document.getElementById('fi').files[0];
+  if (!f) return;
+  const lang = document.getElementById('langSelect').value;
+  showStudyModalLoading(`🃏 Generating Flashcards in ${lang}...`, lang);
+  const form = new FormData();
+  form.append('file', f);
+  form.append('language', lang);
+  try {
+    const res = await fetch('/flashcards-from-file', { method: 'POST', body: form });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed to generate flashcards');
+    renderStudyModalFlashcards(d.flashcards, lang);
+  } catch (e) {
+    document.getElementById('studyModalBody').innerHTML = `<div style="color:#f87171; text-align:center; padding:30px;">❌ Error: ${e.message}</div>`;
+  }
+}
+
+async function genWorksheetFromFile() {
+  const f = document.getElementById('fi').files[0];
+  if (!f) return;
+  const lang = document.getElementById('langSelect').value;
+  showStudyModalLoading(`📝 Generating Worksheet in ${lang}...`, lang);
+  const form = new FormData();
+  form.append('file', f);
+  form.append('language', lang);
+  try {
+    const res = await fetch('/worksheet-from-file', { method: 'POST', body: form });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed to generate worksheet');
+    renderStudyModalWorksheet(d.worksheet, lang);
+  } catch (e) {
+    document.getElementById('studyModalBody').innerHTML = `<div style="color:#f87171; text-align:center; padding:30px;">❌ Error: ${e.message}</div>`;
+  }
+}
+
+async function genFlashcardsFromText() {
+  const t = document.getElementById('rawText').value.trim();
+  const lang = document.getElementById('langSelect2').value;
+  if (t.length < 10) { alert('Please enter at least 10 characters.'); return; }
+  showStudyModalLoading(`🃏 Generating Flashcards in ${lang}...`, lang);
+  try {
+    const res = await fetch('/flashcards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: t, language: lang })
+    });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed to generate flashcards');
+    renderStudyModalFlashcards(d.flashcards, lang);
+  } catch (e) {
+    document.getElementById('studyModalBody').innerHTML = `<div style="color:#f87171; text-align:center; padding:30px;">❌ Error: ${e.message}</div>`;
+  }
+}
+
+async function genWorksheetFromText() {
+  const t = document.getElementById('rawText').value.trim();
+  const lang = document.getElementById('langSelect2').value;
+  if (t.length < 10) { alert('Please enter at least 10 characters.'); return; }
+  showStudyModalLoading(`📝 Generating Worksheet in ${lang}...`, lang);
+  try {
+    const res = await fetch('/worksheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: t, language: lang })
+    });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed to generate worksheet');
+    renderStudyModalWorksheet(d.worksheet, lang);
+  } catch (e) {
+    document.getElementById('studyModalBody').innerHTML = `<div style="color:#f87171; text-align:center; padding:30px;">❌ Error: ${e.message}</div>`;
+  }
+}
+
+async function genFlashcardsFromResult() {
+  if (!_currentJob) return;
+  const lang = _currentJob.language || 'English';
+  showStudyModalLoading(`🃏 Generating Flashcards in ${lang}...`, lang);
+  try {
+    let textToUse = _currentJob.title;
+    try {
+      const r = await fetch(`/script/${_currentJob.job_id}/markdown`);
+      if (r.ok) textToUse = await r.text();
+    } catch (_) {}
+    const res = await fetch('/flashcards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: textToUse, language: lang })
+    });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed to generate flashcards');
+    renderStudyModalFlashcards(d.flashcards, lang);
+  } catch (e) {
+    document.getElementById('studyModalBody').innerHTML = `<div style="color:#f87171; text-align:center; padding:30px;">❌ Error: ${e.message}</div>`;
+  }
+}
+
+async function genWorksheetFromResult() {
+  if (!_currentJob) return;
+  const lang = _currentJob.language || 'English';
+  showStudyModalLoading(`📝 Generating Worksheet in ${lang}...`, lang);
+  try {
+    let textToUse = _currentJob.title;
+    try {
+      const r = await fetch(`/script/${_currentJob.job_id}/markdown`);
+      if (r.ok) textToUse = await r.text();
+    } catch (_) {}
+    const res = await fetch('/worksheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: textToUse, language: lang })
+    });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Failed to generate worksheet');
+    renderStudyModalWorksheet(d.worksheet, lang);
+  } catch (e) {
+    document.getElementById('studyModalBody').innerHTML = `<div style="color:#f87171; text-align:center; padding:30px;">❌ Error: ${e.message}</div>`;
   }
 }
 </script>

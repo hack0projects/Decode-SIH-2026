@@ -25,6 +25,9 @@ export default function AIMentorPage({ currentLang }) {
   // Map short language codes to the full names the /translate backend expects.
   const LANG_FULL_NAMES = {
     hi: "Hindi",
+    sat: "Santhali",
+    hoc: "Ho",
+    unr: "Mundari",
     ta: "Tamil",
     te: "Telugu",
     kn: "Kannada",
@@ -215,6 +218,9 @@ export default function AIMentorPage({ currentLang }) {
           >
             <option value="hi">हिंदी (Hindi)</option>
             <option value="en">English</option>
+            <option value="sat">ᱥᱟᱱᱛᱟᱲᱤ / संथाली (Santhali)</option>
+            <option value="hoc">हो (Ho)</option>
+            <option value="unr">मुंडारी (Mundari)</option>
             <option value="ta">தமிழ் (Tamil)</option>
             <option value="te">తెలుగు (Telugu)</option>
             <option value="kn">ಕನ್ನಡ (Kannada)</option>

@@ -12,9 +12,10 @@ start "CodeSeekho - Study Tools Proxy" cmd /k "cd /d "%~dp0backend-v3" && node p
 
 echo.
 echo ========================================
-echo  Both servers started!
-echo  Main App  : http://localhost:3010
-echo  Study Tools: http://localhost:5000
+echo  CodeSeekho Unified Suite Started!
+echo  Main App     : http://localhost:3010
+echo  Study Tools  : http://localhost:3010/study-tools
+echo  Standalone   : http://localhost:5000
 echo ========================================
 echo.
 pause

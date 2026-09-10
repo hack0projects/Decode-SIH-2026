@@ -30,6 +30,9 @@ function getJDoodleLanguage(lang = 'python') {
 function getFullLanguageName(langCode = 'hi') {
   const map = {
     'hi': 'Hindi',
+    'sat': 'Santhali',
+    'hoc': 'Ho',
+    'unr': 'Mundari',
     'en': 'English',
     'ta': 'Tamil',
     'te': 'Telugu',

@@ -25,6 +25,9 @@ const getSubjectIcon = (subject, size = 15) => {
 const getLocaleCode = (shortCode) => {
   const localeMap = {
     hi: 'hi-IN',
+    sat: 'hi-IN',
+    hoc: 'hi-IN',
+    unr: 'hi-IN',
     en: 'en-IN',
     ta: 'ta-IN',
     te: 'te-IN',
@@ -39,6 +42,9 @@ const getLocaleCode = (shortCode) => {
 const LANG_OPTIONS = [
   { code: 'en', label: 'English' },
   { code: 'hi', label: 'हिंदी' },
+  { code: 'sat', label: 'ᱥᱟᱱᱛᱟᱲᱤ (Santhali)' },
+  { code: 'hoc', label: 'हो / ᱦᱳ (Ho)' },
+  { code: 'unr', label: 'मुंडारी (Mundari)' },
   { code: 'ta', label: 'தமிழ்' },
   { code: 'te', label: 'తెలుగు' },
   { code: 'kn', label: 'ಕನ್ನಡ' },
@@ -483,7 +489,12 @@ Use simple language, bold key terms, and end with a quick quiz question to check
                         <h3 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>{chap.title}</h3>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <a href="http://localhost:3010/study-tools" target="_blank" rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: '600', backgroundColor: '#EDE9FE', border: '1px solid #C4B5FD', display: 'flex', alignItems: 'center', gap: '4px', color: '#6D28D9', textDecoration: 'none' }}>
+                        🃏 Flashcards &amp; Worksheets
+                      </a>
                       <button onClick={(e) => { e.stopPropagation(); handleDownloadPdf(chap); }}
                         style={{ padding: '5px 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: '600', backgroundColor: 'var(--bg-subtle)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
                         <Download size={11} /> PDF

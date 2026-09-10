@@ -62,8 +62,8 @@ async function callAI(prompt) {
 }
 
 async function callRawAI(prompt) {
-  // ✅ 0. Gemini 2.5 Flash — NOW WORKING AND BEST FOR LARGE FILES
-  for (const modelName of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
+  // ✅ 0. Gemini 3.6 Flash — NOW WORKING AND BEST FOR LARGE FILES
+  for (const modelName of ['gemini-3.6-flash', 'gemini-3.5-flash']) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
       const res = await fetch(url, {
@@ -169,28 +169,72 @@ app.get('/proxy/health', (req, res) => proxyRequest(req, res, '/health'));
 app.get('/proxy/jobs',   (req, res) => proxyRequest(req, res, '/jobs'));
 app.get('/proxy/jobs/:id', (req, res) => proxyRequest(req, res, `/jobs/${req.params.id}`));
 app.get('/proxy/credits', (req, res) => proxyRequest(req, res, '/credits'));
+app.post('/translate', (req, res) => proxyRequest(req, res, '/translate', 'POST', req.body));
 
 // =============================================================================
 // FLASHCARDS — POST /flashcards  (raw_text) or /flashcards-from-file (file upload)
 // =============================================================================
+function getStudyToolLanguageGuidance(language = 'English') {
+  const lang = (language || 'English').trim();
+  if (/santhali|santali/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ / संथाली):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Santhali.
+- Use Santhali in Ol Chiki script (ᱥᱟᱱᱛᱟᱲᱤ) or Devanagari transliteration (संथाली).
+- DO NOT default to English or Hindi! Every single card front, card back, and worksheet question must be in Santhali.
+- Include the traditional Santhali greeting: "Johar!" (ᱡᱚᱦᱟᱨ / जोहार).
+- Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
+  }
+  if (/^ho$/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — HO (हो / ᱦᱳ):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Ho language (using Devanagari script or Varang Kshiti).
+- DO NOT write explanations in English. Every single card front, card back, and worksheet question must be in pure Ho.
+- Include the traditional Ho greeting: "Johar!" (जोहार).
+- Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
+  }
+  if (/mundari/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — MUNDARI (मुंडारी / ᱢᱩᱱᱰᱟᱨᱤ):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Mundari language (using Devanagari script or Mundari Bani).
+- DO NOT write explanations in English. Every single card front, card back, and worksheet question must be in pure Mundari.
+- Include the traditional Mundari greeting: "Johar!" (जोहार).
+- Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
+  }
+  if (/hinglish/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE DIRECTIVE — HINGLISH:
+- Write ALL questions, explanations, and instructions in natural conversational Hinglish (Hindi written using Latin Roman script, e.g., "Yeh concept samjho...").`;
+  }
+  if (/hindi/i.test(lang)) {
+    return `
+CRITICAL LANGUAGE DIRECTIVE — HINDI (हिंदी):
+- Write ALL questions, options, answers, and instructions in pure Hindi using Devanagari script.`;
+  }
+  return `
+CRITICAL LANGUAGE DIRECTIVE:
+- Write ALL content strictly in ${lang}. Use the authentic script of ${lang}.`;
+}
+
 function buildFlashcardPrompt(rawText, language = 'English') {
+  const langGuidance = getStudyToolLanguageGuidance(language);
   return `You are an expert educator. From the provided study material, create a comprehensive set of FLASHCARDS.
 
 TARGET LANGUAGE: ${language}
-CRITICAL: Write ALL flashcard content in ${language}. Use native script if regional (e.g., Devanagari for Hindi).
+${langGuidance}
 
 Generate 15-25 flashcards covering ALL important concepts, terms, definitions, and key facts.
 
 Output ONLY valid JSON in this exact structure:
 {
-  "title": "Topic name",
+  "title": "Topic name (in ${language})",
   "language": "${language}",
-  "total": <number>,
+  "total": 15,
   "cards": [
     {
       "id": 1,
-      "front": "Question or term (concise, clear)",
-      "back": "Answer or definition (detailed, informative, 2-4 sentences)",
+      "front": "Question or term in ${language} (concise, clear)",
+      "back": "Answer or definition in ${language} (detailed, informative, 2-4 sentences)",
       "category": "Definition | Concept | Formula | Example | Comparison",
       "difficulty": "Easy | Medium | Hard"
     }
@@ -198,38 +242,40 @@ Output ONLY valid JSON in this exact structure:
 }
 
 RULES:
-1. Front = clear question or term to recall.
-2. Back = complete, informative answer (not just 1 word).
+1. Front = clear question or term to recall in ${language}.
+2. Back = complete, informative answer in ${language} (not just 1 word).
 3. Cover every major concept from the input.
 4. Mix different difficulty levels.
 5. Categories help students identify what type of knowledge is being tested.
+6. The entire card content must be in ${language}.
 
 INPUT TEXT:
-"""${rawText.slice(0, 12000)}"""
+"""${rawText.slice(0, 15000)}"""
 
 JSON ONLY:`;
 }
 
 function buildWorksheetPrompt(rawText, language = 'English') {
+  const langGuidance = getStudyToolLanguageGuidance(language);
   return `You are an expert educator. From the provided study material, create a comprehensive WORKSHEET for students.
 
 TARGET LANGUAGE: ${language}
-CRITICAL: Write ALL content in ${language}. Use native script if regional (e.g., Devanagari for Hindi).
+${langGuidance}
 
 Output ONLY valid JSON:
 {
-  "title": "Worksheet title",
-  "subject": "Subject/topic name",
+  "title": "Worksheet title (in ${language})",
+  "subject": "Subject/topic name (in ${language})",
   "language": "${language}",
-  "instructions": "General instructions for the student",
+  "instructions": "General instructions for the student (in ${language})",
   "sections": [
     {
       "type": "mcq",
-      "title": "Section A: Multiple Choice Questions",
+      "title": "Section A: Multiple Choice Questions (in ${language})",
       "questions": [
         {
           "id": 1,
-          "question": "Question text",
+          "question": "Question text in ${language}",
           "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
           "answer": "A"
         }
@@ -237,46 +283,47 @@ Output ONLY valid JSON:
     },
     {
       "type": "fill_blank",
-      "title": "Section B: Fill in the Blanks",
+      "title": "Section B: Fill in the Blanks (in ${language})",
       "questions": [
-        { "id": 1, "question": "The _____ is used to ...", "answer": "correct word" }
+        { "id": 1, "question": "Question with blank in ${language}", "answer": "correct word in ${language}" }
       ]
     },
     {
       "type": "short_answer",
-      "title": "Section C: Short Answer Questions",
+      "title": "Section C: Short Answer Questions (in ${language})",
       "questions": [
-        { "id": 1, "question": "Explain in 2-3 lines...", "answer": "Model answer..." }
+        { "id": 1, "question": "Explain in 2-3 lines in ${language}...", "answer": "Model answer in ${language}..." }
       ]
     },
     {
       "type": "true_false",
-      "title": "Section D: True or False",
+      "title": "Section D: True or False (in ${language})",
       "questions": [
-        { "id": 1, "question": "Statement here.", "answer": "True" }
+        { "id": 1, "question": "Statement here in ${language}.", "answer": "True" }
       ]
     },
     {
       "type": "long_answer",
-      "title": "Section E: Long Answer Questions",
+      "title": "Section E: Long Answer Questions (in ${language})",
       "questions": [
-        { "id": 1, "question": "Describe in detail...", "answer": "Detailed model answer..." }
+        { "id": 1, "question": "Describe in detail in ${language}...", "answer": "Detailed model answer in ${language}..." }
       ]
     }
   ]
 }
 
 RULES:
-1. MCQ section: Minimum 10 questions.
-2. Fill in the blank: Minimum 8 questions.
+1. MCQ section: Minimum 8-10 questions.
+2. Fill in the blank: Minimum 6-8 questions.
 3. Short answer: Minimum 5 questions.
-4. True/False: Minimum 8 questions.
-5. Long answer: Minimum 3 questions.
+4. True/False: Minimum 6-8 questions.
+5. Long answer: Minimum 2-3 questions.
 6. Questions must cover ALL major topics from the input.
 7. Include model answers for everything.
+8. Every question, option, and answer MUST BE STRICTLY in ${language}.
 
 INPUT TEXT:
-"""${rawText.slice(0, 12000)}"""
+"""${rawText.slice(0, 15000)}"""
 
 JSON ONLY:`;
 }
@@ -290,12 +337,8 @@ app.post('/flashcards', async (req, res) => {
     const prompt = buildFlashcardPrompt(raw_text.trim(), language);
     const rawOut = await callAI(prompt);
     const flashcards = extractJson(rawOut);
-    // Save to Supabase
     const id = uuidv4();
-    await supabase.from('study_tools').insert({
-      tool_id: id, type: 'flashcard', title: flashcards.title,
-      language, data: flashcards, created_at: new Date().toISOString()
-    }).catch(() => {}); // silent fail if table doesn't exist yet
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'flashcard', title: flashcards.title, language, data: flashcards, created_at: new Date().toISOString() }); } catch(_) {}
     return res.json({ success: true, id, flashcards });
   } catch(e) {
     return res.status(500).json({ success: false, error: e.message });
@@ -314,10 +357,7 @@ app.post('/flashcards-from-file', upload.single('file'), async (req, res) => {
     const rawOut = await callAI(prompt);
     const flashcards = extractJson(rawOut);
     const id = uuidv4();
-    await supabase.from('study_tools').insert({
-      tool_id: id, type: 'flashcard', title: flashcards.title,
-      language, data: flashcards, created_at: new Date().toISOString()
-    }).catch(() => {});
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'flashcard', title: flashcards.title, language, data: flashcards, created_at: new Date().toISOString() }); } catch(_) {}
     return res.json({ success: true, id, flashcards });
   } catch(e) {
     await fs.unlink(req.file?.path).catch(() => {});
@@ -335,10 +375,7 @@ app.post('/worksheet', async (req, res) => {
     const rawOut = await callAI(prompt);
     const worksheet = extractJson(rawOut);
     const id = uuidv4();
-    await supabase.from('study_tools').insert({
-      tool_id: id, type: 'worksheet', title: worksheet.title,
-      language, data: worksheet, created_at: new Date().toISOString()
-    }).catch(() => {});
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'worksheet', title: worksheet.title, language, data: worksheet, created_at: new Date().toISOString() }); } catch(_) {}
     return res.json({ success: true, id, worksheet });
   } catch(e) {
     return res.status(500).json({ success: false, error: e.message });
@@ -357,10 +394,7 @@ app.post('/worksheet-from-file', upload.single('file'), async (req, res) => {
     const rawOut = await callAI(prompt);
     const worksheet = extractJson(rawOut);
     const id = uuidv4();
-    await supabase.from('study_tools').insert({
-      tool_id: id, type: 'worksheet', title: worksheet.title,
-      language, data: worksheet, created_at: new Date().toISOString()
-    }).catch(() => {});
+    try { await supabase.from('study_tools').insert({ tool_id: id, type: 'worksheet', title: worksheet.title, language, data: worksheet, created_at: new Date().toISOString() }); } catch(_) {}
     return res.json({ success: true, id, worksheet });
   } catch(e) {
     await fs.unlink(req.file?.path).catch(() => {});

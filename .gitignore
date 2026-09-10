@@ -8,3 +8,10 @@ build/
 test-output.mp4
 .DS_Store
 *.log
+public/audio/
+*.mp3
+*.mp4
+temp_*.json
+backend-v3/temp_*.json
+test-models*.cjs
+dummy.json

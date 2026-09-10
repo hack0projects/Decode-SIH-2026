@@ -29,6 +29,9 @@ export default function Navbar({
   const languages = [
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'हिंदी (Hindi)' },
+    { code: 'sat', name: 'ᱥᱟᱱᱛᱟᱲᱤ (Santhali)' },
+    { code: 'hoc', name: 'हो (Ho)' },
+    { code: 'unr', name: 'मुंडारी (Mundari)' },
     { code: 'ta', name: 'தமிழ் (Tamil)' },
     { code: 'te', name: 'తెలుగు (Telugu)' },
     { code: 'kn', name: 'ಕன்னಡ (Kannada)' },

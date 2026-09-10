@@ -26,25 +26,45 @@ function truncatePrompt(prompt, maxChars) {
 // ─── 0. Gemini — via direct REST (key works as query param) ✅ ────────────────
 const callGemini = async (prompt) => {
   if (!process.env.GEMINI_API_KEY) throw new Error("No Gemini key");
-  for (const modelName of ["gemini-3.6-flash", "gemini-3.5-flash"]) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: truncatePrompt(prompt, 10000) }] }] })
-      });
-      if (!res.ok) { const err = await res.text(); throw new Error(`Gemini ${modelName} HTTP ${res.status}: ${err.slice(0,100)}`); }
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-      throw new Error("Empty Gemini response");
-    } catch(e) {
-      console.warn(`[LLM] Gemini ${modelName} failed: ${e.message?.slice(0,100)}`);
+  const models = [
+    "gemini-3.1-flash-lite",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gemini-flash-latest",
+    "gemini-3.6-flash"
+  ];
+  for (const modelName of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: truncatePrompt(prompt, 10000) }] }] })
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          if ((res.status === 503 || res.status === 429) && attempt === 0) {
+            await new Promise(r => setTimeout(r, 1200));
+            continue;
+          }
+          throw new Error(`Gemini ${modelName} HTTP ${res.status}: ${err.slice(0,100)}`);
+        }
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+        throw new Error("Empty Gemini response");
+      } catch(e) {
+        console.warn(`[LLM] Gemini ${modelName} (attempt ${attempt + 1}) failed: ${e.message?.slice(0,100)}`);
+        if (attempt === 0 && (e.message?.includes("503") || e.message?.includes("429"))) {
+          await new Promise(r => setTimeout(r, 1200));
+        }
+      }
     }
   }
   throw new Error("All Gemini models failed");
 };
+
 
 
 // ─── 1. Cloudflare AI — CONFIRMED WORKING ✅ ─────────────────────────────────
@@ -123,7 +143,6 @@ export async function generateScriptWithRotation(prompt, emitProgress, jobId) {
 
   for (const model of models) {
     try {
-      emitProgress?.(jobId, 6, "gemini", "Generating script via " + model.name + "...");
       console.log("[LLM] Trying " + model.name + "...");
       const rawText = await model.fn(prompt);
       const json = extractJson(rawText);
@@ -131,12 +150,42 @@ export async function generateScriptWithRotation(prompt, emitProgress, jobId) {
         throw new Error("Empty or invalid scenes array in response");
       }
       console.log("[LLM] ✅ " + model.name + " Succeeded! " + json.scenes.length + " scenes");
+      // Only emit progress on success
       emitProgress?.(jobId, 20, "gemini", "Script ready: " + json.scenes.length + " scenes (" + model.name + ")");
       return json;
     } catch (err) {
       console.warn("[LLM] ❌ " + model.name + " Failed: " + err.message?.slice(0, 150));
-      emitProgress?.(jobId, 6, "gemini", model.name + " failed, switching to backup...");
+      // Removed emitProgress for failures to make the rotation smooth and invisible to the user
     }
   }
   throw new Error("All AI Models in the rotation failed or exhausted tokens.");
 }
+
+export async function callRawAIRotation(prompt) {
+  const models = [
+    { name: "Gemini 3.6 Flash",        fn: callGemini },
+    { name: "Cloudflare Llama 3.1",    fn: callCloudflare },
+    { name: "Cloudflare Mistral 7B",   fn: callCloudflareMistral },
+    { name: "Groq Llama 3.3 70B",      fn: callGroqLlama },
+    { name: "Groq Llama 3.1 8B",       fn: callGroqLlama8 },
+    { name: "OpenRouter Gemma-2 9B",   fn: callOpenRouterGemma },
+    { name: "OpenRouter Phi-3 Mini",   fn: callOpenRouterPhi },
+    { name: "OpenRouter DeepSeek R1",  fn: callOpenRouterDeepseek },
+  ];
+
+  for (const model of models) {
+    try {
+      console.log("[Raw LLM] Trying " + model.name + "...");
+      const rawText = await model.fn(prompt);
+      if (rawText && rawText.length > 20) {
+        console.log("[Raw LLM] ✅ " + model.name + " Succeeded!");
+        return rawText;
+      }
+    } catch (err) {
+      console.warn("[Raw LLM] ❌ " + model.name + " Failed: " + err.message?.slice(0, 100));
+    }
+  }
+  throw new Error("All AI Models in the rotation failed.");
+}
+
+export { extractJson };

@@ -1,4 +1,4 @@
-import { useCurrentFrame, useVideoConfig, interpolate, spring } from 'remotion';
+import { useCurrentFrame, useVideoConfig, interpolate, spring, Video, staticFile } from 'remotion';
 
 // =============================================================================
 // SubtitleBar -- Word-level synchronized subtitles
@@ -79,105 +79,155 @@ function AnimatedText({ text, startFrame = 0, color = '#ffffff', fontSize = 22, 
   );
 }
 
-// Blinking eyes with natural eyelid motion
-function Eye({ cx }) {
-  const frame = useCurrentFrame();
-  const blinkCycle = frame % 150;
-  const blink = blinkCycle < 6 ? interpolate(blinkCycle, [0, 3, 6], [14, 1, 14]) : 14;
+// Blinking eyes with natural eyelid motion and subtle gaze
+function IndianEye({ cx, frame }) {
+  const blinkCycle = frame % 130;
+  const blink = blinkCycle < 6 ? interpolate(blinkCycle, [0, 3, 6], [14, 1.5, 14]) : 14;
+  const gazeX = Math.sin(frame * 0.03) * 1.5;
   return (
-    <>
+    <g>
       <ellipse cx={cx} cy="110" rx="10" ry={blink} fill="#ffffff" />
-      <ellipse cx={cx} cy="110" rx="6" ry={Math.min(blink, 8)} fill="#7c3aed" />
-      <ellipse cx={cx + 2} cy="107" rx="2" ry={Math.min(blink * 0.35, 3)} fill="#ffffff" />
-    </>
+      <ellipse cx={cx + gazeX} cy="110" rx="6.5" ry={Math.min(blink, 8.5)} fill="#2b1810" />
+      <ellipse cx={cx + gazeX} cy="110" rx="3.5" ry={Math.min(blink * 0.5, 4.5)} fill="#0a0503" />
+      <ellipse cx={cx + gazeX + 2} cy="107" rx="2" ry={Math.min(blink * 0.35, 2.5)} fill="#ffffff" opacity="0.9" />
+    </g>
   );
 }
 
-// Animated mouth with smooth open/close
-function Mouth({ speaking }) {
+// Animated mouth with word-synchronized open/close
+function IndianMouth({ isSpeakingWord }) {
   const frame = useCurrentFrame();
-  const openness = speaking
-    ? Math.abs(Math.sin(frame * 0.35)) * 16 + 2
+  const openness = isSpeakingWord
+    ? Math.abs(Math.sin(frame * 0.42)) * 14 + 3
     : 2;
+  const mouthWidth = isSpeakingWord ? 22 + Math.sin(frame * 0.3) * 3 : 18;
+
   return (
-    <ellipse cx="100" cy="145" rx="22" ry={openness}
-      fill="#1a0a00" stroke="#8b5cf6" strokeWidth="1.5" />
+    <g>
+      <ellipse cx="100" cy="146" rx={mouthWidth} ry={openness}
+        fill="#260f08" stroke="#8b5cf6" strokeWidth="1.5" />
+      <path d={`M${100 - mouthWidth + 3} ${146 + openness * 0.8} Q100 ${148 + openness} ${100 + mouthWidth - 3} ${146 + openness * 0.8}`}
+        stroke="#b86b4f" strokeWidth="1.5" fill="none" opacity="0.7" strokeLinecap="round" />
+    </g>
   );
 }
 
-// Full avatar with subtle head bob and glow ring pulse
-function AvatarFace({ speaking }) {
-  const frame  = useCurrentFrame();
-  const bob    = Math.sin(frame * 0.04) * 3;
-  const glowR  = 83 + Math.sin(frame * 0.06) * 4;
+// Full Indian AI Educator avatar with authentic styling, glasses, Nehru collar, and affirmative gestures
+function IndianAvatarFace({ speaking, isSpeakingWord }) {
+  const frame = useCurrentFrame();
+  const nodY  = Math.sin(frame * 0.05) * 2.8;
+  const tiltR = Math.sin(frame * 0.075) * 1.8;
+  const glowR = 84 + Math.sin(frame * 0.06) * 4;
+
   return (
-    <svg width="200" height="240" viewBox="0 0 200 240"
-      style={{ transform: `translateY(${bob}px)`, filter: 'drop-shadow(0 0 18px rgba(124,58,237,0.45))' }}>
+    <svg width="220" height="250" viewBox="0 0 200 240"
+      style={{
+        transform: `translateY(${nodY}px) rotate(${tiltR}deg)`,
+        filter: 'drop-shadow(0 0 22px rgba(124,58,237,0.5))',
+        transformOrigin: '100px 180px',
+        transition: 'transform 0.05s ease-out',
+      }}>
       <defs>
-        <radialGradient id="faceGrad" cx="40%" cy="35%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+        <radialGradient id="indianSkin" cx="42%" cy="38%">
+          <stop offset="0%" stopColor="#e3a778" />
+          <stop offset="70%" stopColor="#cf9563" />
+          <stop offset="100%" stopColor="#b4784a" />
         </radialGradient>
-        <radialGradient id="glowGrad" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.25" />
+        <radialGradient id="outerGlow" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
         </radialGradient>
+        <linearGradient id="jacketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1e1b4b" />
+          <stop offset="100%" stopColor="#0f0c29" />
+        </linearGradient>
+        <linearGradient id="mandarinCollar" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#4338ca" />
+          <stop offset="100%" stopColor="#312e81" />
+        </linearGradient>
       </defs>
 
-      {/* Outer glow */}
-      <circle cx="100" cy="110" r={glowR + 12} fill="url(#glowGrad)" />
-      <circle cx="100" cy="110" r={glowR} fill="none" stroke="#7c3aed" strokeWidth="1.5" opacity="0.5" />
-      <circle cx="100" cy="110" r={glowR - 7} fill="none" stroke="#4f46e5" strokeWidth="1" opacity="0.3" />
+      {/* Outer pulsing halo rings */}
+      <circle cx="100" cy="110" r={glowR + 14} fill="url(#outerGlow)" />
+      <circle cx="100" cy="110" r={glowR} fill="none" stroke="#7c3aed" strokeWidth="1.5" opacity="0.45" />
+      <circle cx="100" cy="110" r={glowR - 8} fill="none" stroke="#6366f1" strokeWidth="1" opacity="0.3" strokeDasharray="6 4" />
 
-      {/* Head */}
-      <circle cx="100" cy="110" r="72" fill="#1e1b4b" />
-      <circle cx="100" cy="110" r="72" fill="url(#faceGrad)" />
+      {/* Head base */}
+      <circle cx="100" cy="110" r="70" fill="#181829" />
 
-      {/* Hair */}
-      <ellipse cx="100" cy="46" rx="72" ry="30" fill="#312e81" />
-      <ellipse cx="44" cy="80" rx="18" ry="32" fill="#312e81" />
-      <ellipse cx="156" cy="80" rx="18" ry="32" fill="#312e81" />
+      {/* Hair back / sides */}
+      <ellipse cx="100" cy="46" rx="72" ry="32" fill="#151522" />
+      <ellipse cx="42" cy="85" rx="16" ry="34" fill="#151522" />
+      <ellipse cx="158" cy="85" rx="16" ry="34" fill="#151522" />
 
-      {/* Face */}
-      <ellipse cx="100" cy="120" rx="55" ry="60" fill="#fcd9a0" />
+      {/* Face with authentic warm Indian skin tone */}
+      <ellipse cx="100" cy="120" rx="55" ry="60" fill="url(#indianSkin)" />
 
-      {/* Eyes */}
-      <Eye cx={78} />
-      <Eye cx={122} />
+      {/* Modern textured hair front */}
+      <path d="M42 75 Q100 25 158 75 Q140 48 100 48 Q60 48 42 75" fill="#151522" />
+      <path d="M55 60 Q100 38 145 60 Q100 44 55 60" fill="#2d2b45" opacity="0.4" />
 
       {/* Eyebrows */}
-      <path d="M65 95 Q78 88 91 95" stroke="#5b3a1a" strokeWidth="3" fill="none" strokeLinecap="round" />
-      <path d="M109 95 Q122 88 135 95" stroke="#5b3a1a" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M64 94 Q78 86 92 93" stroke="#2a1810" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <path d="M108 93 Q122 86 136 94" stroke="#2a1810" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+
+      {/* Eyes */}
+      <IndianEye cx={78} frame={frame} />
+      <IndianEye cx={122} frame={frame} />
+
+      {/* Modern Spectacles (Violet/Titanium frame) */}
+      <rect x="64" y="99" width="28" height="22" rx="6" fill="rgba(124,58,237,0.06)" stroke="#8b5cf6" strokeWidth="2" />
+      <rect x="108" y="99" width="28" height="22" rx="6" fill="rgba(124,58,237,0.06)" stroke="#8b5cf6" strokeWidth="2" />
+      <path d="M92 108 Q100 105 108 108" stroke="#8b5cf6" strokeWidth="2" fill="none" />
+      <line x1="68" y1="103" x2="74" y2="103" stroke="#ffffff" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+      <line x1="112" y1="103" x2="118" y2="103" stroke="#ffffff" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
 
       {/* Nose */}
-      <ellipse cx="100" cy="132" rx="5" ry="6" fill="#e8b887" />
+      <ellipse cx="100" cy="132" rx="5.5" ry="6" fill="#b97c4e" />
 
       {/* Mouth */}
-      <Mouth speaking={speaking} />
+      <IndianMouth isSpeakingWord={isSpeakingWord} />
 
-      {/* Body */}
-      <ellipse cx="100" cy="210" rx="60" ry="40" fill="#312e81" />
-      <rect x="82" y="180" width="36" height="35" fill="#4f46e5" rx="4" />
-      <polygon points="100,182 108,195 100,230 92,195" fill="#7c3aed" opacity="0.8" />
+      {/* Ears */}
+      <ellipse cx="44" cy="118" rx="6" ry="12" fill="#cf9563" />
+      <ellipse cx="156" cy="118" rx="6" ry="12" fill="#cf9563" />
+
+      {/* Body -- Stylish Nehru Collar / Tech Jacket */}
+      <ellipse cx="100" cy="214" rx="64" ry="42" fill="url(#jacketGrad)" stroke="#4338ca" strokeWidth="1.5" />
+      <rect x="80" y="174" width="40" height="24" rx="5" fill="url(#mandarinCollar)" stroke="#6366f1" strokeWidth="1" />
+      <line x1="100" y1="174" x2="100" y2="198" stroke="#1e1b4b" strokeWidth="2" />
+      <circle cx="126" cy="198" r="4.5" fill="#f59e0b" stroke="#fbbf24" strokeWidth="1" />
+      <polygon points="126,195 127.5,197.5 130,197.5 128,199.5 129,202 126,200.5 123,202 124,199.5 122,197.5 124.5,197.5" fill="#ffffff" />
     </svg>
   );
 }
 
-// Floating particles
-function Particles({ frame }) {
+// Floating code glyph particles
+const CODE_GLYPHS = ['</>', '{ }', 'let', 'fn()', '=>', '01', 'loop', 'def'];
+
+function CodeParticles({ frame }) {
   return (
     <>
-      {[...Array(10)].map((_, i) => {
-        const x = 8 + i * 9;
-        const y = 15 + Math.sin(frame * 0.018 + i * 0.7) * 20;
-        const s = 0.4 + Math.abs(Math.sin(frame * 0.025 + i)) * 0.8;
+      {CODE_GLYPHS.map((glyph, i) => {
+        const x = 6 + i * 11.5;
+        const y = 14 + Math.sin(frame * 0.018 + i * 0.8) * 18;
+        const s = 0.5 + Math.abs(Math.sin(frame * 0.02 + i)) * 0.6;
+        const rot = Math.sin(frame * 0.02 + i) * 15;
         return (
           <div key={i} style={{
             position: 'absolute', left: `${x}%`, top: `${y}%`,
-            width: 5, height: 5, borderRadius: '50%',
-            background: i % 2 === 0 ? '#7c3aed' : '#4f46e5',
-            opacity: 0.3 * s, transform: `scale(${s})`,
-          }} />
+            color: i % 2 === 0 ? '#8b5cf6' : '#38bdf8',
+            fontFamily: 'Consolas, monospace',
+            fontSize: 13,
+            fontWeight: 700,
+            opacity: 0.25 * s,
+            transform: `scale(${s}) rotate(${rot}deg)`,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            textShadow: '0 0 10px currentColor',
+          }}>
+            {glyph}
+          </div>
         );
       })}
     </>
@@ -207,132 +257,164 @@ export function AvatarScene({ scene, sceneIndex, sceneDurationFrames }) {
   // Avatar speaks only while audio is playing
   const speaking = frame > 10 && frame < audioFrames;
 
-  // Animated background gradient shift
-  const bgHue = interpolate(frame, [0, totalFrames], [220, 260], { extrapolateRight: 'clamp' });
+  // Active word vocalization sync (mouth moves synchronously when word is spoken)
+  const isSpeakingWord = subtitleWords.length > 0
+    ? subtitleWords.some(w => frame >= w.startFrame && frame < w.endFrame)
+    : speaking;
 
   // Parse text
   const lines    = (scene?.text || '').split('\n');
   const headline = lines[0] || '';
   const body     = lines.slice(1).join(' ').trim();
 
-  // Scene progress bar
-  const progress = (frame / totalFrames) * 100;
+  // Check if a video avatar was generated
+  const hasVideoAvatar = !!scene?.avatarVideoPath;
 
   return (
     <div style={{
       width: '100%', height: '100%',
-      background: `linear-gradient(135deg, #07071a 0%, #0d0929 40%, #1a0a3e 100%)`,
+      background: 'radial-gradient(ellipse at 50% 30%, #170d38 0%, #090518 70%, #04020a 100%)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      fontFamily: '"Segoe UI", Arial, sans-serif',
+      fontFamily: '"Plus Jakarta Sans", "Segoe UI", Arial, sans-serif',
       position: 'relative', overflow: 'hidden',
       opacity,
     }}>
 
-      {/* Animated grid overlay */}
+      {/* Sleek animated grid overlay */}
       <div style={{
         position: 'absolute', inset: 0,
-        backgroundImage: 'linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px)',
-        backgroundSize: '60px 60px',
+        backgroundImage: 'linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px)',
+        backgroundSize: '54px 54px',
       }} />
 
-      {/* Floating particles */}
-      <Particles frame={frame} />
+      {/* Floating code glyph particles */}
+      <CodeParticles frame={frame} />
 
       {/* Pulsing center glow */}
       <div style={{
         position: 'absolute',
-        width: 380, height: 380, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)',
+        width: 440, height: 440, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(124,58,237,0.16) 0%, rgba(99,102,241,0.08) 50%, transparent 75%)',
         transform: `scale(${1 + Math.sin(frame * 0.04) * 0.08})`,
+        filter: 'blur(20px)',
       }} />
 
       {/* Main content row */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: 56, width: '90%', maxWidth: 1200,
+        gap: 56, width: '92%', maxWidth: 1200,
         transform: `translateY(${slideUp}px)`,
+        zIndex: 5,
       }}>
 
         {/* Avatar column */}
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <AvatarFace speaking={speaking} />
-          {/* AI Teacher label */}
-          <div style={{
-            fontSize: 12, color: '#a78bfa', letterSpacing: 3, fontWeight: 700,
-            background: 'rgba(124,58,237,0.15)',
-            border: '1px solid rgba(124,58,237,0.3)',
-            borderRadius: 20, padding: '4px 14px',
-          }}>AI TEACHER</div>
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          {hasVideoAvatar ? (
+            <div style={{
+              width: 220, height: 260, borderRadius: 24, overflow: 'hidden',
+              border: '2.5px solid rgba(167, 139, 250, 0.7)',
+              boxShadow: '0 0 35px rgba(124, 58, 237, 0.45), 0 0 10px rgba(99, 102, 241, 0.3)',
+              position: 'relative', background: '#090518',
+            }}>
+              <Video
+                src={staticFile(scene.avatarVideoPath)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div style={{
+                position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
+                background: 'rgba(15, 12, 41, 0.85)', backdropFilter: 'blur(8px)',
+                padding: '2px 10px', borderRadius: 12, border: '1px solid rgba(167, 139, 250, 0.4)',
+                fontSize: 10, fontWeight: 700, color: '#c4b5fd', letterSpacing: 1.5,
+              }}>AI PRESENTER</div>
+            </div>
+          ) : (
+            <IndianAvatarFace speaking={speaking} isSpeakingWord={isSpeakingWord} />
+          )}
 
-          {/* Audio wave bars */}
+          {/* AI Teacher badge */}
+          <div style={{
+            fontSize: 11, color: '#c4b5fd', letterSpacing: 2.5, fontWeight: 800,
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(79,70,229,0.2))',
+            border: '1px solid rgba(167,139,250,0.4)',
+            borderRadius: 20, padding: '4px 14px',
+            boxShadow: '0 2px 10px rgba(124,58,237,0.25)',
+          }}>AI TEACHER • INDIAN ACCENT</div>
+
+          {/* Dynamic Audio Equalizer Bars */}
           {speaking && (
-            <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginTop: 4 }}>
-              {[1.2, 1.8, 0.9, 1.5, 1.1, 1.7, 0.8].map((h, i) => (
+            <div style={{ display: 'flex', gap: 3.5, alignItems: 'center', marginTop: 2 }}>
+              {[1.1, 1.8, 0.9, 1.6, 1.2, 1.7, 0.8, 1.4].map((h, i) => (
                 <div key={i} style={{
-                  width: 3,
-                  height: 5 + Math.abs(Math.sin(frame * 0.28 + i * 0.6)) * 16 * h,
-                  background: `rgba(124,58,237,${0.6 + Math.sin(frame * 0.3 + i) * 0.4})`,
+                  width: 3.5,
+                  height: 6 + Math.abs(Math.sin(frame * 0.32 + i * 0.5)) * 18 * h,
+                  background: `linear-gradient(180deg, #c4b5fd, #7c3aed)`,
                   borderRadius: 2,
+                  boxShadow: '0 0 6px rgba(124,58,237,0.8)',
                 }} />
               ))}
             </div>
           )}
         </div>
 
-        {/* Speech bubble + text */}
-        <div style={{ flex: 1, maxWidth: 600 }}>
-          {/* Scene badge */}
-          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Speech Card + Typography */}
+        <div style={{ flex: 1, maxWidth: 640 }}>
+          {/* Top meta pill */}
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
-              background: 'rgba(124,58,237,0.25)', border: '1px solid rgba(124,58,237,0.5)',
-              borderRadius: 20, padding: '3px 14px', fontSize: 11, color: '#a78bfa', letterSpacing: 2,
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.35), rgba(99,102,241,0.2))',
+              border: '1px solid rgba(167,139,250,0.5)',
+              borderRadius: 20, padding: '3px 14px', fontSize: 11, color: '#e0e7ff', letterSpacing: 2, fontWeight: 700,
             }}>
               SCENE {(sceneIndex || 0) + 1}
             </div>
-            {/* Audio progress bar -- how much has been read */}
+            {/* Audio progression bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 10, color: '#6d5fc7' }}>🔊</span>
-              <div style={{ width: 80, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 99 }}>
+              <span style={{ fontSize: 11, color: '#a78bfa' }}>🔊</span>
+              <div style={{ width: 90, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99 }}>
                 <div style={{
                   width: `${Math.min(100, (frame / Math.max(audioFrames, 1)) * 100)}%`,
-                  height: '100%', background: '#7c3aed', borderRadius: 99,
-                  boxShadow: '0 0 6px #7c3aed',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #7c3aed, #38bdf8)',
+                  borderRadius: 99,
+                  boxShadow: '0 0 8px #7c3aed',
                 }} />
               </div>
             </div>
           </div>
 
-          {/* Speech bubble */}
+          {/* Frosted Glassmorphism Card */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(79,70,229,0.08))',
-            border: '1.5px solid rgba(124,58,237,0.45)',
-            borderRadius: 20, padding: '28px 34px',
+            background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.45) 0%, rgba(15, 12, 41, 0.65) 100%)',
+            border: '1.5px solid rgba(167, 139, 250, 0.45)',
+            borderRadius: 24, padding: '30px 36px',
             position: 'relative',
-            boxShadow: '0 8px 40px rgba(124,58,237,0.15), inset 0 1px 0 rgba(255,255,255,0.06)',
+            boxShadow: '0 12px 48px rgba(0, 0, 0, 0.45), 0 0 28px rgba(124, 58, 237, 0.15), inset 0 1px 0 rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(16px)',
           }}>
-            {/* Bubble pointer */}
+            {/* Speech bubble pointer */}
             <div style={{
-              position: 'absolute', left: -18, top: 44,
+              position: 'absolute', left: -18, top: 46,
               width: 0, height: 0,
               borderTop: '10px solid transparent',
               borderBottom: '10px solid transparent',
-              borderRight: '18px solid rgba(124,58,237,0.45)',
+              borderRight: '18px solid rgba(167, 139, 250, 0.45)',
             }} />
 
             {/* Headline */}
             <div style={{
-              fontSize: 30, fontWeight: 800, color: '#ffffff',
+              fontSize: 32, fontWeight: 800, color: '#ffffff',
               lineHeight: 1.25, marginBottom: body ? 18 : 0,
-              textShadow: '0 0 30px rgba(124,58,237,0.6)',
+              textShadow: '0 2px 24px rgba(124,58,237,0.7)',
+              letterSpacing: '-0.01em',
             }}>
-              <AnimatedText text={headline} startFrame={8} fontSize={30} fontWeight={800} />
+              <AnimatedText text={headline} startFrame={8} fontSize={32} fontWeight={800} />
             </div>
 
             {/* Body */}
             {body && (
-              <div style={{ fontSize: 19, lineHeight: 1.75, color: '#c4b5fd' }}>
-                <AnimatedText text={body} startFrame={20} color="#c4b5fd" fontSize={19} fontWeight={400} />
+              <div style={{ fontSize: 20, lineHeight: 1.75, color: '#e0e7ff', opacity: 0.95 }}>
+                <AnimatedText text={body} startFrame={20} color="#e0e7ff" fontSize={20} fontWeight={400} />
               </div>
             )}
           </div>

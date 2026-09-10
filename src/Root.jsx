@@ -53,7 +53,7 @@ export const V3VideoEngine = ({ script, audioFiles, avatarEngine }) => {
             <SceneFade duration={20}>
               {/* Only full-screen avatar on intro. For other scenes, we skip avatar or could add it in corner */}
               {scene.type === 'intro' ? (
-                <AvatarScene scene={{ ...scene, audioDuration: durationSec, subtitleWords: audioData?.subtitleWords ?? [] }} sceneIndex={index} sceneDurationFrames={sceneDurationFrames} />
+                <AvatarScene scene={{ ...scene, audioDuration: durationSec, subtitleWords: audioData?.subtitleWords ?? [], avatarVideoPath: audioData?.avatarVideoPath }} sceneIndex={index} sceneDurationFrames={sceneDurationFrames} />
               ) : (
                 renderInnerScene()
               )}
