@@ -113,14 +113,14 @@ function IndianMouth({ isSpeakingWord }) {
 }
 
 // Full Indian AI Educator avatar with authentic styling, glasses, Nehru collar, and affirmative gestures
-function IndianAvatarFace({ speaking, isSpeakingWord }) {
+export function IndianAvatarFace({ speaking, isSpeakingWord, width = 220, height = 250 }) {
   const frame = useCurrentFrame();
   const nodY  = Math.sin(frame * 0.05) * 2.8;
   const tiltR = Math.sin(frame * 0.075) * 1.8;
   const glowR = 84 + Math.sin(frame * 0.06) * 4;
 
   return (
-    <svg width="220" height="250" viewBox="0 0 200 240"
+    <svg width={width} height={height} viewBox="0 0 200 240"
       style={{
         transform: `translateY(${nodY}px) rotate(${tiltR}deg)`,
         filter: 'drop-shadow(0 0 22px rgba(124,58,237,0.5))',
