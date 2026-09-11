@@ -283,9 +283,21 @@ CRITICAL LANGUAGE & TRANSLATION MANDATE:
 The user selected target language: **${targetLanguage}**.
 THE ENTIRE SCRIPT (ALL TITLES, ALL HEADINGS, ALL BULLET POINTS, ALL FLOWCHART STEPS, AND ALL SPOKEN "text" NARRATIONS) MUST BE EXCLUSIVELY WRITTEN AND SPOKEN IN **${targetLanguage}**!
 DO NOT EXPLAIN IN ENGLISH! DO NOT DEFAULT TO ENGLISH NARRATION!
-- If ${targetLanguage} is Santhali (Santali): The AI teacher MUST explain everything in authentic Santhali vocabulary (using traditional greetings like "Johar!" / ᱡᱚᱦᱟᱨ!). For the spoken "text" narration, write in Santhali language using Devanagari or Ol Chiki with pronunciation (e.g. "जोहार! आज आबो पायथन प्रोग्रामिंग बोन चेदा... / Johar! Abo Python programming bon cheda..."). NEVER EXPLAIN IN ENGLISH!
-- If ${targetLanguage} is Ho: The AI teacher MUST explain everything in authentic Ho vocabulary using Devanagari script (e.g. "जोहार! तेहेन ले पायथन प्रोग्रामिंग ले दुलुड़-मेनेते सीद-आ..."). NEVER EXPLAIN IN ENGLISH!
-- If ${targetLanguage} is Mundari: The AI teacher MUST explain everything in authentic Mundari vocabulary using Devanagari script (e.g. "जोहार! तिलिंग दिंगा अबु पायथन प्रोग्रामिंग अबुंग लेलकेदा..."). NEVER EXPLAIN IN ENGLISH!
+
+STRICT SANTHALI, HO, AND MUNDARI NATIVE SCRIPT & TEXT RULES (NEVER USE HINDI):
+- If ${targetLanguage} is Santhali (Santali):
+  1. ALL VISIBLE ON-SCREEN TEXT (titles, headings, bullet points, flowchart steps, comparison titles, key terms) MUST BE WRITTEN EXCLUSIVELY IN AUTHENTIC SANTHALI USING OL CHIKI SCRIPT (ᱚᱞ ᱪᱤᱠᱤ)!
+     Examples of authentic Santhali Ol Chiki: ᱡᱚᱦᱟᱨ! (Johar!), ᱯᱟᱭᱛᱷᱚᱱ ᱪᱮᱫ (Learn Python), ᱞᱩᱯ ᱵᱟᱵᱚᱛ (About Loops), ᱮᱛᱚᱦᱚᱵ (Start), ᱢᱩᱪᱟᱹᱫ (End), ᱥᱟᱱᱟᱢ ᱠᱚ (Everyone), ᱱᱚᱣᱟ ᱫᱚ...
+  2. Spoken "text" narration MUST be in authentic Santhali vocabulary in Ol Chiki (or phonetic Romanized Santhali like "Johar! Tehen do abo Python programming bon cheda...") so the AI voice speaks genuine Santhali.
+  3. ABSOLUTELY FORBIDDEN: DO NOT write in Hindi or Devanagari script! Santhali MUST be written in genuine Ol Chiki (ᱚᱞ ᱪᱤᱠᱤ)!
+- If ${targetLanguage} is Ho:
+  1. ALL VISIBLE ON-SCREEN TEXT AND SPOKEN NARRATIONS MUST BE IN AUTHENTIC HO LANGUAGE WORDS (Ho Jagor), using native Ho vocabulary!
+     Examples: "Johar! Teheng bu Python loop chidu-a", "Chidu" (learn), "Hating" (division/part), "Nea" (this), "Suba" (root/base), "Gono" (count/value), "Enan" (that).
+  2. ABSOLUTELY FORBIDDEN: DO NOT write in standard Hindi sentences or Hindi vocabulary! Ho is NOT Hindi!
+- If ${targetLanguage} is Mundari:
+  1. ALL VISIBLE ON-SCREEN TEXT AND SPOKEN NARRATIONS MUST BE IN AUTHENTIC MUNDARI LANGUAGE WORDS (Mundari Jagor), using native Mundari vocabulary!
+     Examples: "Johar! Tiling dinga Python chetan re jagar-a", "Jagor" (speak/explain), "Sari" (true), "Bariating" (two types), "Hating" (part), "Nelked" (understand/seen).
+  2. ABSOLUTELY FORBIDDEN: DO NOT write in standard Hindi sentences or Hindi vocabulary! Mundari is NOT Hindi!
 - If ${targetLanguage} is Hindi: write EVERYTHING in Devanagari script in pure Hindi. Do NOT use English!
 - If ${targetLanguage} is Bengali: write EVERYTHING in Bengali script in pure Bengali. Do NOT use English!
 - Programming language code lines (e.g. 'x = 10', 'def loop():') remain in programming code syntax, but all explanations, comments, headings, bullet points, and narrations MUST BE IN ${targetLanguage}!
@@ -354,9 +366,21 @@ CRITICAL LANGUAGE & TRANSLATION MANDATE:
 The user selected target language: **${targetLanguage}**.
 THE ENTIRE SCRIPT (ALL TITLES, ALL HEADINGS, ALL BULLET POINTS, ALL FLOWCHART STEPS, AND ALL SPOKEN "text" NARRATIONS) MUST BE EXCLUSIVELY WRITTEN AND SPOKEN IN **${targetLanguage}**!
 DO NOT EXPLAIN IN ENGLISH! DO NOT DEFAULT TO ENGLISH NARRATION!
-- If ${targetLanguage} is Santhali (Santali): The AI teacher MUST explain everything in authentic Santhali vocabulary (using traditional greetings like "Johar!" / ᱡᱚᱦᱟᱨ!). For the spoken "text" narration, write in Santhali language using Devanagari or Ol Chiki with pronunciation (e.g. "जोहार! आज आबो पायथन प्रोग्रामिंग बोन चेदा... / Johar! Abo Python programming bon cheda..."). NEVER EXPLAIN IN ENGLISH!
-- If ${targetLanguage} is Ho: The AI teacher MUST explain everything in authentic Ho vocabulary using Devanagari script (e.g. "जोहार! तेहेन ले पायथन प्रोग्रामिंग ले दुलुड़-मेनेते सीद-आ..."). NEVER EXPLAIN IN ENGLISH!
-- If ${targetLanguage} is Mundari: The AI teacher MUST explain everything in authentic Mundari vocabulary using Devanagari script (e.g. "जोहार! तिलिंग दिंगा अबु पायथन प्रोग्रामिंग अबुंग लेलकेदा..."). NEVER EXPLAIN IN ENGLISH!
+
+STRICT SANTHALI, HO, AND MUNDARI NATIVE SCRIPT & TEXT RULES (NEVER USE HINDI):
+- If ${targetLanguage} is Santhali (Santali):
+  1. ALL VISIBLE ON-SCREEN TEXT (titles, headings, bullet points, flowchart steps, comparison titles, key terms) MUST BE WRITTEN EXCLUSIVELY IN AUTHENTIC SANTHALI USING OL CHIKI SCRIPT (ᱚᱞ ᱪᱤᱠᱤ)!
+     Examples of authentic Santhali Ol Chiki: ᱡᱚᱦᱟᱨ! (Johar!), ᱯᱟᱭᱛᱷᱚᱱ ᱪᱮᱫ (Learn Python), ᱞᱩᱯ ᱵᱟᱵᱚᱛ (About Loops), ᱮᱛᱚᱦᱚᱵ (Start), ᱢᱩᱪᱟᱹᱫ (End), ᱥᱟᱱᱟᱢ ᱠᱚ (Everyone), ᱱᱚᱣᱟ ᱫᱚ...
+  2. Spoken "text" narration MUST be in authentic Santhali vocabulary in Ol Chiki (or phonetic Romanized Santhali like "Johar! Tehen do abo Python programming bon cheda...") so the AI voice speaks genuine Santhali.
+  3. ABSOLUTELY FORBIDDEN: DO NOT write in Hindi or Devanagari script! Santhali MUST be written in genuine Ol Chiki (ᱚᱞ ᱪᱤᱠᱤ)!
+- If ${targetLanguage} is Ho:
+  1. ALL VISIBLE ON-SCREEN TEXT AND SPOKEN NARRATIONS MUST BE IN AUTHENTIC HO LANGUAGE WORDS (Ho Jagor), using native Ho vocabulary!
+     Examples: "Johar! Teheng bu Python loop chidu-a", "Chidu" (learn), "Hating" (division/part), "Nea" (this), "Suba" (root/base), "Gono" (count/value), "Enan" (that).
+  2. ABSOLUTELY FORBIDDEN: DO NOT write in standard Hindi sentences or Hindi vocabulary! Ho is NOT Hindi!
+- If ${targetLanguage} is Mundari:
+  1. ALL VISIBLE ON-SCREEN TEXT AND SPOKEN NARRATIONS MUST BE IN AUTHENTIC MUNDARI LANGUAGE WORDS (Mundari Jagor), using native Mundari vocabulary!
+     Examples: "Johar! Tiling dinga Python chetan re jagar-a", "Jagor" (speak/explain), "Sari" (true), "Bariating" (two types), "Hating" (part), "Nelked" (understand/seen).
+  2. ABSOLUTELY FORBIDDEN: DO NOT write in standard Hindi sentences or Hindi vocabulary! Mundari is NOT Hindi!
 - If ${targetLanguage} is Hindi: write EVERYTHING in Devanagari script in pure Hindi. Do NOT use English!
 - If ${targetLanguage} is Bengali: write EVERYTHING in Bengali script in pure Bengali. Do NOT use English!
 - Programming language code lines (e.g. 'x = 10', 'def loop():') remain in programming code syntax, but all explanations, comments, headings, bullet points, and narrations MUST BE IN ${targetLanguage}!

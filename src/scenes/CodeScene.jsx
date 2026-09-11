@@ -5,16 +5,15 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { SubtitleBar } from "./AvatarScene";
 
 /**
- * CodeScene — Ultra-Sleek VS Code Studio Glass Terminal
+ * CodeScene — Interactive VS Code Studio with Live Memory State & Output Stream
  * Features:
- * - macOS frosted glass window frame with traffic light controls
- * - Animated laser scan sweep across code lines
- * - Blinking typewriter cursor
- * - Integrated IDE bottom status bar
- * - Clear layout reserving corner space for PiP Teacher Cam
+ * - Animated execution line pointer that steps down code lines
+ * - Live Variable Memory Tracker dock (variable changes live on screen)
+ * - Live terminal execution output console
+ * - Native Ol Chiki & indigenous language font support
  */
 export const CodeScene = ({
-  code = "# Code example\nprint('Hello World')",
+  code = "# Code example\nfor i in range(3):\n    print('Loop:', i)",
   language = "python",
   audioDuration = 10,
   subtitleWords = [],
@@ -31,24 +30,24 @@ export const CodeScene = ({
     config: { damping: 14, stiffness: 100, mass: 0.8 },
   });
   const opacity = interpolate(entrance, [0, 1], [0, 1]);
-  const translateY = interpolate(entrance, [0, 1], [25, 0]);
+  const translateY = interpolate(entrance, [0, 1], [22, 0]);
 
-  // Animated left accent line
-  const borderHeight = interpolate(frame, [8, 32], [0, 100], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Laser scan line position (sweeps down every 100 frames)
-  const scanProgress = (frame % 110) / 110;
-  const scanTop = scanProgress * 100;
-
-  // Blinking cursor
-  const cursorBlink = Math.floor(frame / 12) % 2 === 0;
-
-  // Clean code string
+  // Clean code and line counting
   const cleanCode = (code || "").replace(/\\n/g, "\n");
-  const lineCount = cleanCode.split("\n").length;
+  const codeLines = cleanCode.split("\n");
+  const lineCount = codeLines.length;
+
+  // Active line step execution simulation
+  const activeLineIdx = Math.min(
+    lineCount - 1,
+    Math.floor((frame / Math.max(1, totalFrames * 0.8)) * lineCount)
+  );
+
+  // Live variable iteration simulation
+  const simIteration = Math.floor(frame / 35) % 4;
+
+  // Terminal blinking cursor
+  const cursorBlink = Math.floor(frame / 12) % 2 === 0;
 
   return (
     <div
@@ -65,8 +64,8 @@ export const CodeScene = ({
         `,
         position: "relative",
         overflow: "hidden",
-        fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
-        padding: "45px 60px 85px 60px",
+        fontFamily: '"Noto Sans Ol Chiki", "Plus Jakarta Sans", "Inter", sans-serif',
+        padding: "35px 55px 85px 55px",
         boxSizing: "border-box",
       }}
     >
@@ -82,204 +81,186 @@ export const CodeScene = ({
         }}
       />
 
-      {/* Terminal Card (Width 70% to leave room for PiP Teacher Cam) */}
+      {/* Main Dual Area: Editor (60%) + Live Execution Inspector (40%) */}
       <div
         style={{
-          width: "70%",
-          maxWidth: 860,
-          background: "rgba(10, 13, 24, 0.88)",
-          backdropFilter: "blur(20px)",
-          border: "1.5px solid rgba(124, 58, 237, 0.4)",
-          borderRadius: 20,
-          boxShadow:
-            "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(124, 58, 237, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.15)",
-          overflow: "hidden",
+          display: "flex",
+          gap: 24,
+          width: "74%",
+          maxWidth: 920,
+          zIndex: 10,
           opacity,
           transform: `translateY(${translateY}px)`,
-          zIndex: 10,
         }}
       >
-        {/* Top Window Bar */}
+        {/* Left: Code Editor Terminal Window */}
         <div
           style={{
+            flex: 1.3,
+            background: "rgba(10, 13, 24, 0.9)",
+            backdropFilter: "blur(20px)",
+            border: "1.5px solid rgba(124, 58, 237, 0.4)",
+            borderRadius: 18,
+            boxShadow:
+              "0 20px 45px rgba(0, 0, 0, 0.6), 0 0 30px rgba(124, 58, 237, 0.2)",
+            overflow: "hidden",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "12px 20px",
-            background: "linear-gradient(180deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 12, 41, 0.8) 100%)",
-            borderBottom: "1px solid rgba(139, 92, 246, 0.25)",
+            flexDirection: "column",
           }}
         >
-          {/* Traffic Lights */}
-          <div style={{ display: "flex", gap: 8 }}>
-            <span
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                background: "#ef4444",
-                boxShadow: "0 0 8px rgba(239, 68, 68, 0.6)",
-              }}
-            />
-            <span
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                background: "#f59e0b",
-                boxShadow: "0 0 8px rgba(245, 158, 11, 0.6)",
-              }}
-            />
-            <span
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: "50%",
-                background: "#10b981",
-                boxShadow: "0 0 8px rgba(16, 185, 129, 0.6)",
-              }}
-            />
-          </div>
-
-          {/* Active File Tab */}
+          {/* Top Window Bar */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              background: "rgba(124, 58, 237, 0.2)",
-              border: "1px solid rgba(167, 139, 250, 0.35)",
-              padding: "4px 14px",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 700,
-              color: "#e0e7ff",
+              justifyContent: "space-between",
+              padding: "10px 18px",
+              background: "linear-gradient(180deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 12, 41, 0.8) 100%)",
+              borderBottom: "1px solid rgba(139, 92, 246, 0.25)",
+            }}
+          >
+            <div style={{ display: "flex", gap: 7 }}>
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ef4444" }} />
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#f59e0b" }} />
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#10b981" }} />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "rgba(124, 58, 237, 0.2)",
+                border: "1px solid rgba(167, 139, 250, 0.35)",
+                padding: "3px 12px",
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#e0e7ff",
+                fontFamily: "monospace",
+              }}
+            >
+              <span>{language === "cpp" ? "⚡ main.cpp" : "🐍 main.py"}</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e" }} />
+            </div>
+
+            <span style={{ fontSize: 10, fontWeight: 800, color: "#c4b5fd", letterSpacing: 1.5 }}>
+              EXEC LINE {activeLineIdx + 1}/{lineCount}
+            </span>
+          </div>
+
+          {/* Code Text with Line Highlighter */}
+          <div style={{ position: "relative", padding: "10px 14px" }}>
+            <SyntaxHighlighter
+              language={language === "cpp" ? "cpp" : "python"}
+              style={vscDarkPlus}
+              showLineNumbers
+              wrapLines
+              lineNumberStyle={{
+                color: "rgba(148, 163, 184, 0.35)",
+                minWidth: "2.2em",
+                paddingRight: "0.8em",
+                fontSize: 14,
+              }}
+              customStyle={{
+                margin: 0,
+                padding: "10px 14px",
+                background: "transparent",
+                fontSize: 15,
+                lineHeight: 1.6,
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Noto Sans Ol Chiki', monospace",
+              }}
+            >
+              {cleanCode}
+            </SyntaxHighlighter>
+          </div>
+
+          {/* Bottom IDE status */}
+          <div
+            style={{
+              marginTop: "auto",
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "7px 16px",
+              background: "#080614",
+              borderTop: "1px solid rgba(255, 255, 255, 0.07)",
+              fontSize: 10,
+              color: "#94a3b8",
               fontFamily: "monospace",
             }}
           >
-            <span>{language === "cpp" ? "⚡ main.cpp" : "🐍 script.py"}</span>
-            <span
-              style={{
-                display: "inline-block",
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#38bdf8",
-                boxShadow: "0 0 6px #38bdf8",
-              }}
-            />
-          </div>
-
-          {/* Language Tag */}
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: 1.5,
-              color: "#c4b5fd",
-              textTransform: "uppercase",
-              background: "rgba(255, 255, 255, 0.06)",
-              padding: "3px 10px",
-              borderRadius: 6,
-            }}
-          >
-            {language === "cpp" ? "C++ 20" : "Python 3.12"}
+            <span style={{ color: "#34d399" }}>▶ Running Interpreter</span>
+            <span>UTF-8 • Spaces: 4</span>
           </div>
         </div>
 
-        {/* Code Content Area */}
-        <div style={{ position: "relative", padding: "12px 18px" }}>
-          {/* Animated left neon accent line */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: 4,
-              height: `${borderHeight}%`,
-              background: "linear-gradient(180deg, #7c3aed 0%, #38bdf8 100%)",
-              boxShadow: "0 0 10px #7c3aed",
-            }}
-          />
-
-          {/* Laser scanning beam */}
-          <div
-            style={{
-              position: "absolute",
-              top: `${scanTop}%`,
-              left: 4,
-              right: 0,
-              height: 2,
-              background:
-                "linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, rgba(56, 189, 248, 0.8) 50%, rgba(168, 85, 247, 0) 100%)",
-              boxShadow: "0 0 8px rgba(56, 189, 248, 0.8)",
-              pointerEvents: "none",
-              zIndex: 5,
-            }}
-          />
-
-          {/* Syntax Highlighter */}
-          <SyntaxHighlighter
-            language={language === "cpp" ? "cpp" : "python"}
-            style={vscDarkPlus}
-            showLineNumbers
-            wrapLines
-            lineNumberStyle={{
-              color: "rgba(148, 163, 184, 0.35)",
-              minWidth: "2.4em",
-              paddingRight: "1em",
-              userSelect: "none",
-              fontSize: 15,
-            }}
-            customStyle={{
-              margin: 0,
-              padding: "16px 20px 16px 8px",
-              background: "transparent",
-              fontSize: 16,
-              lineHeight: 1.65,
-              fontFamily:
-                "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
-            }}
-          >
-            {cleanCode}
-          </SyntaxHighlighter>
-
-          {/* Blinking Typewriter Cursor */}
-          <span
-            style={{
-              display: cursorBlink ? "inline-block" : "none",
-              width: 8,
-              height: 18,
-              background: "#38bdf8",
-              boxShadow: "0 0 8px #38bdf8",
-              marginLeft: 4,
-              verticalAlign: "middle",
-            }}
-          />
-        </div>
-
-        {/* Bottom IDE Status Bar */}
+        {/* Right: Animated Memory State & Live Console Stream */}
         <div
           style={{
+            flex: 0.9,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "8px 18px",
-            background: "#080614",
-            borderTop: "1px solid rgba(255, 255, 255, 0.07)",
-            fontSize: 11,
-            color: "#94a3b8",
-            fontFamily: "monospace",
+            flexDirection: "column",
+            gap: 12,
           }}
         >
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <span style={{ color: "#34d399" }}>⚡ Ready</span>
-            <span>Lines: {lineCount}</span>
-            <span>UTF-8</span>
+          {/* Live Variable Watcher Card */}
+          <div
+            style={{
+              background: "rgba(15, 12, 35, 0.85)",
+              backdropFilter: "blur(16px)",
+              border: "1.5px solid rgba(56, 189, 248, 0.35)",
+              borderRadius: 16,
+              padding: "14px 16px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, fontSize: 11, fontWeight: 800, color: "#38bdf8", letterSpacing: 1 }}>
+              <span>🧠</span>
+              <span>MEMORY STATE TRACKER</span>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", padding: "6px 10px", borderRadius: 8, fontFamily: "monospace", fontSize: 12 }}>
+                <span style={{ color: "#a5b4fc" }}>step_index:</span>
+                <span style={{ color: "#38bdf8", fontWeight: 800 }}>{simIteration}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", padding: "6px 10px", borderRadius: 8, fontFamily: "monospace", fontSize: 12 }}>
+                <span style={{ color: "#a5b4fc" }}>memory_addr:</span>
+                <span style={{ color: "#34d399", fontWeight: 800 }}>0x7FFEE3</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(255,255,255,0.04)", padding: "6px 10px", borderRadius: 8, fontFamily: "monospace", fontSize: 12 }}>
+                <span style={{ color: "#a5b4fc" }}>cpu_cycles:</span>
+                <span style={{ color: "#fbbf24", fontWeight: 800 }}>{frame * 12} ops</span>
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            <span style={{ color: "#c4b5fd" }}>Spaces: 4</span>
-            <span style={{ color: "#38bdf8" }}>Syntax: OK</span>
+
+          {/* Live Output Console */}
+          <div
+            style={{
+              background: "#080614",
+              border: "1.5px solid rgba(16, 185, 129, 0.35)",
+              borderRadius: 16,
+              padding: "14px 16px",
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 11, fontWeight: 800, color: "#34d399", letterSpacing: 1 }}>
+              <span>💻</span>
+              <span>TERMINAL STDOUT</span>
+            </div>
+
+            <div style={{ fontFamily: "monospace", fontSize: 12, color: "#cbd5e1", lineHeight: 1.5, flex: 1 }}>
+              <div style={{ color: "#64748b" }}>$ python main.py</div>
+              <div style={{ color: "#38bdf8" }}>[Program started...]</div>
+              {simIteration >= 1 && <div style={{ color: "#86efac" }}>&gt; Output: step 1 processed</div>}
+              {simIteration >= 2 && <div style={{ color: "#86efac" }}>&gt; Output: step 2 processed</div>}
+              {simIteration >= 3 && <div style={{ color: "#86efac" }}>&gt; Loop completed successfully ✓</div>}
+              <span style={{ display: cursorBlink ? "inline-block" : "none", color: "#34d399", fontWeight: 900 }}>▌</span>
+            </div>
           </div>
         </div>
       </div>

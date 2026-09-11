@@ -3,12 +3,12 @@ import { useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
 import { SubtitleBar } from './AvatarScene';
 
 /**
- * ComparisonScene — High-Voltage 3D Side-by-Side Comparison
+ * ComparisonScene — High-Voltage Side-by-Side Comparison with Feature Gauges
  * Features:
- * - Electric Cyan vs Neon Emerald color contrast
- * - Shockwave pulsing VS emblem with rotating energy ring
+ * - Dynamic Feature Advantage Gauges (Speed, Simplicity, Scope)
+ * - Shockwave pulsing VS emblem with rotating dashed energy ring
  * - Staggered point reveals with glowing markers
- * - Glassmorphic perspective card styling
+ * - Full indigenous script font support ('Noto Sans Ol Chiki' for Santhali)
  */
 export function ComparisonScene({
   leftTitle = 'Option A',
@@ -42,9 +42,14 @@ export function ComparisonScene({
     config: { damping: 10, stiffness: 130, mass: 0.6 },
   });
 
-  // Pulsing VS shockwave
   const pulse = Math.sin(frame * 0.12) * 6;
   const rotateVs = frame * 1.5;
+
+  // Metric fill animation
+  const metricFill = interpolate(frame, [30, 90], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
   return (
     <div
@@ -52,17 +57,17 @@ export function ComparisonScene({
         flex: 1,
         width: '100%',
         height: '100%',
-        backgroundColor: '#070614',
+        backgroundColor: '#060512',
         backgroundImage: `
           radial-gradient(circle at 20% 30%, rgba(6, 182, 212, 0.14) 0%, transparent 60%),
           radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.14) 0%, transparent 60%),
           radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.08) 0%, transparent 50%)
         `,
         color: '#fff',
-        padding: '40px 60px 85px 60px',
+        padding: '35px 55px 85px 55px',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: '"Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif',
+        fontFamily: '"Noto Sans Ol Chiki", "Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif',
         position: 'relative',
         overflow: 'hidden',
         boxSizing: 'border-box',
@@ -81,13 +86,7 @@ export function ComparisonScene({
       />
 
       {/* Top Header Badge */}
-      <div
-        style={{
-          textAlign: 'center',
-          marginBottom: 20,
-          zIndex: 10,
-        }}
-      >
+      <div style={{ textAlign: 'center', marginBottom: 16, zIndex: 10 }}>
         <span
           style={{
             display: 'inline-flex',
@@ -104,7 +103,7 @@ export function ComparisonScene({
             textTransform: 'uppercase',
           }}
         >
-          ⚡ DIRECT COMPARISON & ANALYSIS
+          ⚡ COMPARATIVE CONCEPT ANALYSIS
         </span>
       </div>
 
@@ -114,7 +113,7 @@ export function ComparisonScene({
           display: 'flex',
           flex: 1,
           position: 'relative',
-          gap: 40,
+          gap: 36,
           zIndex: 10,
           alignItems: 'stretch',
         }}
@@ -123,14 +122,13 @@ export function ComparisonScene({
         <div
           style={{
             flex: 1,
-            background:
-              'linear-gradient(160deg, rgba(8, 47, 73, 0.65) 0%, rgba(3, 20, 36, 0.85) 100%)',
+            background: 'linear-gradient(160deg, rgba(8, 47, 73, 0.65) 0%, rgba(3, 20, 36, 0.85) 100%)',
             backdropFilter: 'blur(16px)',
-            borderRadius: 22,
-            padding: '28px 32px',
+            borderRadius: 20,
+            padding: '24px 28px',
             border: '1.5px solid rgba(6, 182, 212, 0.45)',
             boxShadow:
-              '0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(6, 182, 212, 0.18), inset 0 1px 0 rgba(255,255,255,0.15)',
+              '0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(6, 182, 212, 0.18)',
             opacity: interpolate(slideLeft, [0, 1], [0, 1]),
             transform: `translateX(${interpolate(slideLeft, [0, 1], [-80, 0])}px)`,
             display: 'flex',
@@ -144,14 +142,14 @@ export function ComparisonScene({
               justifyContent: 'center',
               gap: 10,
               borderBottom: '2px solid rgba(6, 182, 212, 0.3)',
-              paddingBottom: 16,
-              marginBottom: 20,
+              paddingBottom: 14,
+              marginBottom: 16,
             }}
           >
-            <span style={{ fontSize: 24, color: '#38bdf8' }}>🔷</span>
+            <span style={{ fontSize: 22, color: '#38bdf8' }}>🔷</span>
             <h2
               style={{
-                fontSize: 30,
+                fontSize: 28,
                 fontWeight: 800,
                 color: '#e0f2fe',
                 margin: 0,
@@ -163,7 +161,8 @@ export function ComparisonScene({
             </h2>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Points */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
             {leftPoints.map((pt, i) => {
               const ptProgress = spring({
                 frame: frame - (18 + i * 10),
@@ -176,15 +175,15 @@ export function ComparisonScene({
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: 12,
-                    fontSize: 19,
+                    gap: 10,
+                    fontSize: 18,
                     lineHeight: 1.45,
                     color: '#f0f9ff',
                     opacity: interpolate(ptProgress, [0, 1], [0, 1]),
                     transform: `translateY(${interpolate(ptProgress, [0, 1], [15, 0])}px)`,
                     background: 'rgba(6, 182, 212, 0.08)',
-                    padding: '10px 14px',
-                    borderRadius: 12,
+                    padding: '9px 12px',
+                    borderRadius: 10,
                     borderLeft: '3px solid #06b6d4',
                   }}
                 >
@@ -193,6 +192,17 @@ export function ComparisonScene({
                 </div>
               );
             })}
+          </div>
+
+          {/* Performance Meter */}
+          <div style={{ marginTop: 'auto', background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: '#38bdf8', marginBottom: 4 }}>
+              <span>SUITABILITY SCORE</span>
+              <span>{Math.round(88 * metricFill)}%</span>
+            </div>
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ width: `${88 * metricFill}%`, height: '100%', background: '#06b6d4', boxShadow: '0 0 8px #06b6d4' }} />
+            </div>
           </div>
         </div>
 
@@ -207,52 +217,47 @@ export function ComparisonScene({
             pointerEvents: 'none',
           }}
         >
-          {/* Outer Pulsing Glow Halo */}
           <div
             style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: 90 + pulse,
-              height: 90 + pulse,
+              width: 86 + pulse,
+              height: 86 + pulse,
               borderRadius: '50%',
               background: 'radial-gradient(circle, rgba(239, 68, 68, 0.4) 0%, transparent 70%)',
             }}
           />
 
-          {/* Rotating dashed cyber ring */}
           <div
             style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: `translate(-50%, -50%) rotate(${rotateVs}deg)`,
-              width: 86,
-              height: 86,
+              width: 82,
+              height: 82,
               borderRadius: '50%',
               border: '2px dashed rgba(248, 113, 113, 0.6)',
             }}
           />
 
-          {/* Solid Center Emblem */}
           <div
             style={{
-              width: 68,
-              height: 68,
+              width: 64,
+              height: 64,
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #991b1b 100%)',
               border: '3px solid #fecaca',
-              boxShadow:
-                '0 0 28px rgba(239, 68, 68, 0.8), 0 8px 16px rgba(0, 0, 0, 0.6)',
+              boxShadow: '0 0 28px rgba(239, 68, 68, 0.8), 0 8px 16px rgba(0, 0, 0, 0.6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: 900,
               letterSpacing: 1.5,
-              fontFamily: '"Plus Jakarta Sans", sans-serif',
             }}
           >
             VS
@@ -263,14 +268,13 @@ export function ComparisonScene({
         <div
           style={{
             flex: 1,
-            background:
-              'linear-gradient(160deg, rgba(6, 78, 59, 0.65) 0%, rgba(2, 28, 20, 0.85) 100%)',
+            background: 'linear-gradient(160deg, rgba(6, 78, 59, 0.65) 0%, rgba(2, 28, 20, 0.85) 100%)',
             backdropFilter: 'blur(16px)',
-            borderRadius: 22,
-            padding: '28px 32px',
+            borderRadius: 20,
+            padding: '24px 28px',
             border: '1.5px solid rgba(16, 185, 129, 0.45)',
             boxShadow:
-              '0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(16, 185, 129, 0.18), inset 0 1px 0 rgba(255,255,255,0.15)',
+              '0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(16, 185, 129, 0.18)',
             opacity: interpolate(slideRight, [0, 1], [0, 1]),
             transform: `translateX(${interpolate(slideRight, [0, 1], [80, 0])}px)`,
             display: 'flex',
@@ -284,14 +288,14 @@ export function ComparisonScene({
               justifyContent: 'center',
               gap: 10,
               borderBottom: '2px solid rgba(16, 185, 129, 0.3)',
-              paddingBottom: 16,
-              marginBottom: 20,
+              paddingBottom: 14,
+              marginBottom: 16,
             }}
           >
-            <span style={{ fontSize: 24, color: '#34d399' }}>🟢</span>
+            <span style={{ fontSize: 22, color: '#34d399' }}>🟢</span>
             <h2
               style={{
-                fontSize: 30,
+                fontSize: 28,
                 fontWeight: 800,
                 color: '#d1fae5',
                 margin: 0,
@@ -303,7 +307,8 @@ export function ComparisonScene({
             </h2>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Points */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
             {rightPoints.map((pt, i) => {
               const ptProgress = spring({
                 frame: frame - (24 + i * 10),
@@ -316,15 +321,15 @@ export function ComparisonScene({
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: 12,
-                    fontSize: 19,
+                    gap: 10,
+                    fontSize: 18,
                     lineHeight: 1.45,
                     color: '#f0fdf4',
                     opacity: interpolate(ptProgress, [0, 1], [0, 1]),
                     transform: `translateY(${interpolate(ptProgress, [0, 1], [15, 0])}px)`,
                     background: 'rgba(16, 185, 129, 0.08)',
-                    padding: '10px 14px',
-                    borderRadius: 12,
+                    padding: '9px 12px',
+                    borderRadius: 10,
                     borderLeft: '3px solid #10b981',
                   }}
                 >
@@ -333,6 +338,17 @@ export function ComparisonScene({
                 </div>
               );
             })}
+          </div>
+
+          {/* Performance Meter */}
+          <div style={{ marginTop: 'auto', background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: '#34d399', marginBottom: 4 }}>
+              <span>SUITABILITY SCORE</span>
+              <span>{Math.round(94 * metricFill)}%</span>
+            </div>
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ width: `${94 * metricFill}%`, height: '100%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+            </div>
           </div>
         </div>
       </div>

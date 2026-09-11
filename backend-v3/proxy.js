@@ -178,27 +178,26 @@ function getStudyToolLanguageGuidance(language = 'English') {
   const lang = (language || 'English').trim();
   if (/santhali|santali/i.test(lang)) {
     return `
-CRITICAL LANGUAGE & CULTURAL DIRECTIVE — SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ / संथाली):
-- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Santhali.
-- Use Santhali in Ol Chiki script (ᱥᱟᱱᱛᱟᱲᱤ) or Devanagari transliteration (संथाली).
-- DO NOT default to English or Hindi! Every single card front, card back, and worksheet question must be in Santhali.
-- Include the traditional Santhali greeting: "Johar!" (ᱡᱚᱦᱟᱨ / जोहार).
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ / Ol Chiki):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Santhali using authentic OL CHIKI SCRIPT (ᱚᱞ ᱪᱤᱠᱤ).
+- ABSOLUTELY DO NOT use Hindi or Devanagari script! Everything must be in Santhali Ol Chiki script.
+- Include the traditional Santhali greeting: "Johar!" (ᱡᱚᱦᱟᱨ!).
 - Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
   }
   if (/^ho$/i.test(lang)) {
     return `
-CRITICAL LANGUAGE & CULTURAL DIRECTIVE — HO (हो / ᱦᱳ):
-- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Ho language (using Devanagari script or Varang Kshiti).
-- DO NOT write explanations in English. Every single card front, card back, and worksheet question must be in pure Ho.
-- Include the traditional Ho greeting: "Johar!" (जोहार).
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — HO (ᱦᱳ / Ho Jagor):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Ho language words (using native Ho vocabulary: chidu, hating, nea, suba, gono).
+- ABSOLUTELY DO NOT write in Hindi! Use genuine Ho language.
+- Include the traditional Ho greeting: "Johar!".
 - Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
   }
   if (/mundari/i.test(lang)) {
     return `
-CRITICAL LANGUAGE & CULTURAL DIRECTIVE — MUNDARI (मुंडारी / ᱢᱩᱱᱰᱟᱨᱤ):
-- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Mundari language (using Devanagari script or Mundari Bani).
-- DO NOT write explanations in English. Every single card front, card back, and worksheet question must be in pure Mundari.
-- Include the traditional Mundari greeting: "Johar!" (जोहार).
+CRITICAL LANGUAGE & CULTURAL DIRECTIVE — MUNDARI (ᱢᱩᱱᱰᱟᱨᱤ / Mundari Jagor):
+- You MUST write ALL questions, answers, options, definitions, titles, and explanations STRICTLY in Mundari language words (using native Mundari vocabulary: jagor, sari, hating, nelke).
+- ABSOLUTELY DO NOT write in Hindi! Use genuine Mundari language.
+- Include the traditional Mundari greeting: "Johar!".
 - Only technical programming identifiers/code (like 'for', 'while', 'print', 'x = 5') may remain in Latin code syntax.`;
   }
   if (/hinglish/i.test(lang)) {

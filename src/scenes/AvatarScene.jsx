@@ -42,7 +42,7 @@ export function SubtitleBar({ subtitleWords = [], totalFrames, audioFrames }) {
             padding: isActive ? '2px 8px' : '2px 2px',
             transition: 'all 0.1s',
             textShadow: isActive ? '0 0 18px rgba(167,139,250,0.9)' : 'none',
-            fontFamily: '"Segoe UI", Arial, sans-serif',
+            fontFamily: '"Noto Sans Ol Chiki", "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif',
             letterSpacing: '0.02em',
           }}>
             {w.word}
@@ -276,7 +276,7 @@ export function AvatarScene({ scene, sceneIndex, sceneDurationFrames }) {
       background: 'radial-gradient(ellipse at 50% 30%, #170d38 0%, #090518 70%, #04020a 100%)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      fontFamily: '"Plus Jakarta Sans", "Segoe UI", Arial, sans-serif',
+      fontFamily: '"Noto Sans Ol Chiki", "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif',
       position: 'relative', overflow: 'hidden',
       opacity,
     }}>

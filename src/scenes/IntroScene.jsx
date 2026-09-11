@@ -52,7 +52,7 @@ export const IntroScene = ({ text = "Welcome to CodeSeekho\nMaster Programming N
         `,
         position: "relative",
         overflow: "hidden",
-        fontFamily: '"Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif',
+        fontFamily: '"Noto Sans Ol Chiki", "Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif',
       }}
     >
       {/* Background Cyber Grid */}

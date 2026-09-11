@@ -45,6 +45,9 @@ export const V3VideoEngine = ({ script, audioFiles, avatarEngine }) => {
 
   return (
     <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ol+Chiki:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+      `}</style>
       {script.scenes.map((scene, index) => {
         const audioData = audioFiles?.find((a) => a.sceneIndex === index);
         const durationSec = audioData?.durationSec || 10;
@@ -204,18 +207,18 @@ const mockProps = {
     scenes: [
       {
         type: 'intro',
-        text: 'Welcome to Python Loops Masterclass!\nLearn iteration, control flow, and clean code principles with live interactive visualizations.',
+        text: 'ᱡᱚᱦᱟᱨ! ᱛᱮᱦᱮᱧ ᱫᱚ ᱯᱟᱭᱛᱷᱚᱱ ᱞᱩᱯ ᱵᱚᱱ ᱪᱮᱫᱟ\nLearn iteration, clean logic, and algorithms with live visualizations.',
       },
       {
         type: 'explainer',
-        heading: 'Why Loops Matter in Modern Code',
+        heading: 'ᱯᱟᱭᱛᱷᱚᱱ ᱞᱩᱯ ᱵᱟᱵᱚᱛ (About Python Loops)',
         bullets: [
-          'Loops allow repeating blocks of code with dynamic conditions',
-          'Eliminates repetitive manual logic and saves CPU cycles',
-          'Crucial for processing collections, arrays, and real-time streams',
-          'Works seamlessly with break, continue, and else clauses',
+          'ᱞᱩᱯ ᱫᱚ ᱵᱟᱨ ᱵᱟᱨ ᱠᱟᱹᱢᱤ ᱞᱟᱹᱜᱤᱫ ᱵᱮᱵᱷᱟᱨᱚᱜ-ᱟ (Repeats tasks efficiently)',
+          'ᱠᱚᱢ ᱚᱠᱛᱚ ᱨᱮ ᱰᱷᱮᱨ ᱠᱟᱹᱢᱤ ᱦᱩᱭᱩᱜ-ᱟ (Saves computational time)',
+          'ᱯᱟᱭᱛᱷᱚᱱ ᱨᱮ For ᱟᱨ While ᱞᱩᱯ ᱢᱮᱱᱟᱜ-ᱟ (Supports For and While loops)',
+          'ᱠᱳᱰ ᱟᱹᱰᱤ ᱪᱮᱦᱨᱟ ᱟᱨ ᱥᱚᱞᱦᱮ ᱧᱮᱞᱚᱜ-ᱟ (Produces clean, readable code)',
         ],
-        highlights: ['Loops', 'CPU cycles', 'streams', 'conditions'],
+        highlights: ['ᱞᱩᱯ', 'For', 'While', 'ᱠᱳᱰ'],
       },
       {
         type: 'code',
